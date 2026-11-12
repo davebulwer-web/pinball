@@ -49,11 +49,6 @@ export default {
     // inlane guides (left outlane is between x 20 and 34)
     { path: [[34, 432], [34, 500], [101, 556]] },
     { path: [[268, 432], [268, 500], [201, 556]] },
-    // short lane walls leading into the ramp and wire mouths
-    { path: [[71, 346], [71, 366]], r: 1.5 },
-    { path: [[89, 346], [89, 366]], r: 1.5 },
-    { path: [[223, 346], [223, 366]], r: 1.5 },
-    { path: [[241, 346], [241, 366]], r: 1.5 },
     // top lane posts
     { path: [[105, 62], [105, 92]], r: 2 },
     { path: [[136, 62], [136, 92]], r: 2 },
@@ -63,11 +58,13 @@ export default {
   gates: [{ a: [294, 200], b: [312, 188], oneWay: [0, -1] }],
   posts: [{ c: [151, 420], R: 3 }],
 
+  // both mouths lean toward the opposite flipper, so the cross shots (right flipper to the ramp, left
+  // flipper to the wire) go straight in; funnels catch near misses
   ramps: [
-    { id: 'bigWheel', style: 'ramp', width: 16, minSpeed: 430, score: 2000,
-      path: joinPath([[80, 346], [80, 150]], arcPts([62, 150], 18, 0, -180, 15), [[44, 150], [44, 414]]) },
-    { id: 'coaster', style: 'wire', width: 14, minSpeed: 430, score: 1500,
-      path: joinPath([[232, 346], [232, 150]], arcPts([190, 150], 42, 0, -180, 10), [[148, 150], [148, 222]]) },
+    { id: 'bigWheel', style: 'ramp', width: 20, mouth: 32, minSpeed: 300, assist: 700, score: 2000, funnel: [18, 10],
+      path: joinPath([[104, 352], [86, 306], [80, 270], [80, 150]], arcPts([62, 150], 18, 0, -180, 15), [[44, 150], [44, 414]]) },
+    { id: 'coaster', style: 'wire', width: 16, mouth: 30, minSpeed: 300, assist: 700, score: 1500, funnel: [18, 10],
+      path: joinPath([[200, 352], [218, 306], [232, 270], [232, 150]], arcPts([191.5, 150], 40.5, 0, -180, 10), [[151, 150], [151, 222]]) },
   ],
   bumpers: [
     { id: 'bump1', c: [180, 190], R: 13, score: 100 },
@@ -92,8 +89,8 @@ export default {
   inserts: [
     { id: 'kbL', c: [27, 505], r: 4, label: 'K' },
     { id: 'lock', c: [151, 322], r: 5, label: 'L' },
-    { id: 'jackpot', c: [80, 384], r: 5, label: 'J', colour: '#ff5a5a' },
-    { id: 'combo', c: [232, 384], r: 5, label: 'C', colour: '#5ad0ff' },
+    { id: 'jackpot', c: [112, 390], r: 5, label: 'J', colour: '#ff5a5a' },
+    { id: 'combo', c: [190, 390], r: 5, label: 'C', colour: '#5ad0ff' },
     { id: 'xball', c: [151, 396], r: 5, label: 'X', colour: '#ff9a3a' },
     { id: 'frenzy', c: [279, 296], r: 5, label: 'S', colour: '#c07aff' },
     { id: 'x2', c: [118, 466], r: 4, label: '2' },

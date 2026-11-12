@@ -22,7 +22,7 @@ export function joinPath(...pieces) {
   return out;
 }
 
-// A polyline moved sideways by d (positive = to the left of the direction of travel, in screen terms
+// A polyline moved sideways by d, a number or one value per point (positive = to the left of the direction of travel, in screen terms
 // the side you get by turning the travel direction 90 degrees anticlockwise on screen).
 export function offsetPath(path, d) {
   const n = path.length, out = [];
@@ -33,9 +33,31 @@ export function offsetPath(path, d) {
     let tx = d0[0] + d1[0], ty = d0[1] + d1[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
     const nx = ty, ny = -tx;                          // left normal of the averaged direction
     const cos = Math.max(0.35, nx * d0[1] + ny * -d0[0]); // stretch at corners so the width stays even
-    out.push([+(path[i][0] + nx * d / cos).toFixed(2), +(path[i][1] + ny * d / cos).toFixed(2)]);
+    const di = Array.isArray(d) ? d[i] : d;
+    out.push([+(path[i][0] + nx * di / cos).toFixed(2), +(path[i][1] + ny * di / cos).toFixed(2)]);
   }
   return out;
 }
 
 export const mirrorX = (cx, pts) => pts.map(([x, y]) => [2 * cx - x, y]);
+
+// Half-widths for each point of a ramp path: `mouth` wide at the start, narrowing to `width` over the
+// first `taper` pixels of the path.
+export function rampHalfWidths(path, width, mouth = width, taper = 30) {
+  let s = 0;
+  return path.map((p, i) => {
+    if (i) s += Math.hypot(p[0] - path[i - 1][0], p[1] - path[i - 1][1]);
+    const k = Math.min(1, s / taper);
+    return (mouth + (width - mouth) * k) / 2;
+  });
+}
+
+// Split long straight pieces of a path so a taper can be applied smoothly.
+export function densify(path, step = 10) {
+  const out = [path[0]];
+  for (let i = 1; i < path.length; i++) {
+    const [a, b] = [path[i - 1], path[i]], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
+    for (let k = 1; k <= n; k++) out.push([+(a[0] + (b[0] - a[0]) * k / n).toFixed(2), +(a[1] + (b[1] - a[1]) * k / n).toFixed(2)]);
+  }
+  return out;
+}

@@ -18,7 +18,7 @@
 //   spinners: [{ id, a, b, score }]                             spin by the ball's speed, score per turn
 //   saucers:  [{ id, c, hold, eject: { dir, speed }, score }]   catch the ball, then kick it out
 //   kickbacks:[{ id, a, b, dir, speed }]                        fire the ball back out while lamp `id` is lit
-//   ramps:    [{ id, path, width, layer, style: 'ramp' | 'wire', minSpeed, score }]
+//   ramps:    [{ id, path, width, mouth, taper, layer, style: 'ramp' | 'wire', minSpeed, assist, score, funnel }]
 //               the ball enters at path[0] (going along the path) if fast enough, rides on its own layer
 //               between two rails, and drops back to the playfield at the last point
 //   gates:    [{ a, b, oneWay: [nx, ny] }]                      one-way walls
@@ -29,7 +29,7 @@ import { World, Ball, STEP } from './physics.js';
 import { Flipper } from './parts/flipper.js';
 import { Plunger } from './parts/plunger.js';
 import { Rules } from './rules.js';
-import { offsetPath } from './geom.js';
+import { offsetPath, rampHalfWidths, densify } from './geom.js';
 
 const D = Math.PI / 180;
 
@@ -104,20 +104,30 @@ export class Game {
   // A ramp or wire rail: two rails on its own layer, a lip on the playfield at the mouth that turns back
   // balls too slow to climb, and sensors that move a ball between layers at each end.
   buildRamp(r) {
-    const w = this.world, L = r.layer ?? 1, half = (r.width ?? 16) / 2;
+    const w = this.world, L = r.layer ?? 1;
+    if (!r.shaped) { r.path = densify(r.path, 10); r.shaped = true; }   // once, even if the config is reused
     const p = r.path, n = p.length;
-    r.left = offsetPath(p, half); r.right = offsetPath(p, -half);
+    const half = rampHalfWidths(p, r.width ?? 16, r.mouth ?? r.width ?? 16, r.taper ?? 30);
+    r.left = offsetPath(p, half); r.right = offsetPath(p, half.map(h => -h));
     for (const rail of [r.left, r.right]) for (let i = 0; i + 1 < rail.length; i++)
       w.add({ kind: 'seg', a: rail[i], b: rail[i + 1], r: 1, bounce: 0.25, friction: 0.02, layer: L, tag: 'rail' });
     const dir = (a, b) => { const l = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; };
     const din = dir(p[0], p[1]), dout = dir(p[n - 2], p[n - 1]);
     const across = (pt, d, out = 0) => [[pt[0] + r.left[0][0] - p[0][0] + d[0] * out, pt[1] + r.left[0][1] - p[0][1] + d[1] * out], [pt[0] + r.right[0][0] - p[0][0] + d[0] * out, pt[1] + r.right[0][1] - p[0][1] + d[1] * out]];
     const [m0, m1] = across(p[0], din);
-    r.mouth = [m0, m1];
+    r.mouthLine = [m0, m1];
     // on the playfield: entry sensor at the mouth, and the lip just inside it
     w.add({ kind: 'seg', a: m0, b: m1, r: 0, sensor: true, layer: 0, tag: 'rampIn', ramp: r, dir: din });
     const [l0, l1] = across(p[0], din, 6);
     w.add({ kind: 'seg', a: l0, b: l1, r: 1, bounce: 0.3, layer: 0, tag: 'lip' });
+    // optional funnel: two short playfield walls flaring out from the mouth toward the player
+    if (r.funnel) {
+      const [fl, fs] = Array.isArray(r.funnel) ? r.funnel : [r.funnel, r.funnel * 0.45];
+      const nx = din[1], ny = -din[0];               // left of the travel direction
+      const wall = (m, side) => [m, [m[0] - din[0] * fl + nx * fs * side, m[1] - din[1] * fl + ny * fs * side]];
+      r.funnelWalls = [wall(m0, 1), wall(m1, -1)];
+      for (const [a, b] of r.funnelWalls) w.add({ kind: 'seg', a, b, r: 1.5, bounce: 0.3, layer: 0, tag: 'wall' });
+    }
     // on the ramp: a ball rolling back out of the mouth drops to the playfield
     w.add({ kind: 'seg', a: m0, b: m1, r: 0, sensor: true, layer: L, tag: 'rampBack', ramp: r, dir: [-din[0], -din[1]] });
     // the far end: drops the ball back to the playfield
@@ -285,7 +295,16 @@ export class Game {
         this.trigger('kickback', s.id, 0);
         break;
       case 'rampIn':
-        if (speedAlong(s.dir) >= (s.ramp.minSpeed ?? 380)) { this.world.setLayer(ball, s.ramp.layer ?? 1); this.emit('rampEnter', { id: s.ramp.id }); }
+        if (speedAlong(s.dir) >= (s.ramp.minSpeed ?? 380)) {
+          this.world.setLayer(ball, s.ramp.layer ?? 1);
+          // assist: a ball that clears the lip is lined up with the ramp and helped up the climb (like a real
+          // ramp entrance funnelling it in), so the lip decides make or miss rather than a glancing rail hit
+          if (s.ramp.assist) {
+            const v = Math.max(Math.hypot(ball.vx, ball.vy), s.ramp.assist);
+            ball.vx = s.dir[0] * v; ball.vy = s.dir[1] * v;
+          }
+          this.emit('rampEnter', { id: s.ramp.id });
+        }
         break;
       case 'rampBack':
         if (speedAlong(s.dir) > 0) { this.world.setLayer(ball, 0); this.trigger('rampFail', s.ramp.id, 0); }

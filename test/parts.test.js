@@ -8,11 +8,17 @@ const newGame = (over = {}) => { const g = new Game({ ...parts, ...over }); g.st
 const run = (g, secs, each) => { for (let i = 0; i < secs * 60; i++) { g.update(1 / 60); each?.(g); } };
 const seen = g => { const e = g.events.map(x => x.type + (x.id ? ':' + x.id : '')); g.events.length = 0; return e; };
 const shoot = (g, x, y, vx, vy) => { const b = g.world.balls[0]; Object.assign(b, { x, y, vx, vy }); return b; };
+// a shot straight up the line of a ramp's mouth, from 20 px out
+const shootRamp = (g, id, speed) => {
+  const r = g.cfg.ramps.find(x => x.id === id), [a, c] = r.path;
+  const l = Math.hypot(c[0] - a[0], c[1] - a[1]), d = [(c[0] - a[0]) / l, (c[1] - a[1]) / l];
+  return shoot(g, a[0] - d[0] * 20, a[1] - d[1] * 20, d[0] * speed, d[1] * speed);
+};
 
 test('a slow ball is turned back at the ramp mouth, a fast one rides the ramp to the left inlane', () => {
-  let g = newGame(); shoot(g, 80, 375, 0, -350); run(g, 1);
+  let g = newGame(); shootRamp(g, 'bigWheel', 250); run(g, 1);
   assert.ok(!seen(g).includes('rampEnter:bigWheel'), 'slow ball should not get on the ramp');
-  g = newGame(); const b = shoot(g, 80, 375, 0, -900);
+  g = newGame(); const b = shootRamp(g, 'bigWheel', 600);
   let landed = null;
   run(g, 3, () => { if (!landed && g.events.some(e => e.type === 'ramp' && e.id === 'bigWheel')) landed = [b.x, b.y]; });
   assert.ok(landed, 'ball completed the ramp');
@@ -21,7 +27,7 @@ test('a slow ball is turned back at the ramp mouth, a fast one rides the ramp to
 });
 
 test('a ball that runs out of speed on a ramp rolls back off it onto the playfield', () => {
-  const g = newGame(); const b = shoot(g, 80, 375, 0, -520);
+  const g = newGame({ ramps: parts.ramps.map(r => ({ ...r, assist: 0 })) }); const b = shootRamp(g, 'bigWheel', 480);
   run(g, 2);
   const ev = seen(g);
   assert.ok(ev.includes('rampEnter:bigWheel') && ev.includes('rampFail:bigWheel'), ev.join());
@@ -29,7 +35,7 @@ test('a ball that runs out of speed on a ramp rolls back off it onto the playfie
 });
 
 test('the wire rail drops the ball into the saucer, which kicks it out again', () => {
-  const g = newGame(); shoot(g, 232, 375, 0, -1000);
+  const g = newGame(); shootRamp(g, 'coaster', 600);
   let held = false;
   run(g, 4, () => { held ||= g.world.balls[0]?.held; });
   const ev = seen(g);

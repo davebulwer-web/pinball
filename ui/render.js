@@ -78,6 +78,7 @@ export function buildPlayfield(cfg) {
     if (w.arc) wm.arc(w.arc.c, w.arc.R, w.arc.from * D, w.arc.to * D, rad);
   }
   for (const g of cfg.gates ?? []) wm.line(g.a, g.b, 0.8);
+  for (const r of cfg.ramps ?? []) for (const [a, b] of r.funnelWalls ?? []) wm.line(a, b, 1.5);
   for (const p of cfg.posts ?? []) wm.stamp(p.c[0], p.c[1], p.R + 0.5);
   wm.paint(ctx, col.wall, col.wallDark, '#e4e8f2');
   // rubber kicking faces of the slings
@@ -94,8 +95,7 @@ function buildOverlay(cfg) {
   const [W, H] = cfg.size, col = cfg.colours;
   const [cv, ctx] = canvasOf(W, H);
   for (const r of cfg.ramps ?? []) {
-    const half = (r.width ?? 16) / 2;
-    const left = offsetPath(r.path, half), right = offsetPath(r.path, -half);
+    const left = r.left ?? offsetPath(r.path, (r.width ?? 16) / 2), right = r.right ?? offsetPath(r.path, -(r.width ?? 16) / 2);
     if (r.style !== 'wire') {
       // the ramp floor, with a darker band every 8 pixels along it
       const fl = mask(W, H);
