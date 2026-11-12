@@ -1,6 +1,7 @@
 // The shared screen for every table: owns the canvas, scaling, the scrolling camera, touch and keyboard
 // input, the dot-matrix strip, sound, pause, the debug overlay (D key or ?debug) and the tuning panel
-// (?tune). A table's page just calls startTable(config).
+// (?tune). A table's page just calls startTable(config), or startTable(config, { art }) with images from
+// ui/art.js loadArt().
 //
 // Screen: 320 pixels wide. The height follows the window shape (480 to 600), so a phone in portrait is
 // filled; the top 32 rows are the dot-matrix strip and the rest is the view onto the playfield.
@@ -13,13 +14,14 @@ import { commas, drawText } from './font.js';
 
 const W = 320, DMD_ROWS = 32;
 
-export function startTable(cfg, { canvas = document.getElementById('screen') } = {}) {
+export function startTable(cfg, { canvas = document.getElementById('screen'), art = {} } = {}) {
   const ctx = canvas.getContext('2d');
   const game = new Game(cfg);
-  const { base: playfield, overlay } = buildPlayfield(cfg);
-  const sprites = { ball: ballSprite(cfg.ballRadius ?? 5), overlay };
+  const { base: playfield, overlay } = buildPlayfield(cfg, art);
+  const sprites = { ball: ballSprite(cfg.ballRadius ?? 5), overlay, art };
   const dmd = createDmd(cfg.dmd);
   sound.load(cfg.sounds);
+  sound.setSong(cfg.music);
   const params = new URLSearchParams(location.search);
   let debug = params.has('debug');
   let paused = false, H = 480, camY = cfg.size[1], shakeUntil = 0, shakeDx = 0, touchSeen = false;
@@ -143,7 +145,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
         sound.play(e.type, e); break;
       case 'hit': sound.play('target'); break;
       case 'sound': sound.play(e.name); break;
-      case 'start': sound.play('start'); break;
+      case 'start': sound.play('start'); sound.startMusic(); break;
       case 'serve': dmd.show([`PLAYER ${e.player}`, `BALL ${e.ball}`], { secs: 1.5 }); break;
       case 'saved': sound.play('saved'); dmd.show('BALL SAVED', { blink: true, secs: 1.6 }); break;
       case 'drain': sound.play('drain'); if (!e.tilted) dmd.show('BALL LOST', { secs: 1.2 }); break;
@@ -158,9 +160,14 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
       case 'nudge': sound.play('nudge'); shakeUntil = game.world.time + 0.12; shakeDx = e.dx ? -Math.sign(e.dx) * 2 : 0; break;
       case 'danger': sound.play('danger'); dmd.show('DANGER', { blink: true, secs: 1.5 }); break;
       case 'tilt': sound.play('tilt'); dmd.clearQueue(); dmd.show('TILT', { blink: true, secs: 3 }); break;
-      case 'message': sound.play('award'); dmd.show(e.sub ? [e.text, e.sub] : e.text, { secs: 2, blink: /JACKPOT|MULTIBALL/.test(e.text) }); break;
+      case 'message': {
+        const scene = e.scene && cfg.scenes?.[e.scene];
+        sound.play(e.sound ?? 'award');
+        dmd.show(e.sub ? [e.text, e.sub] : e.text, scene ? { secs: scene.secs ?? 3, scene: scene.draw ?? scene } : { secs: 2, blink: /JACKPOT|MULTIBALL/.test(e.text) });
+        break;
+      }
       case 'over':
-        sound.play('over'); overAt = game.world.time;
+        sound.play('over'); sound.stopMusic(); overAt = game.world.time;
         lastScore = e.scores[0]; save('lastScore', lastScore);
         dmd.show('GAME OVER', { secs: 2 }); dmd.show(['FINAL SCORE', commas(lastScore)], { secs: 3 });
         break;
@@ -176,6 +183,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
   function frame(ms) {
     const dt = Math.min(0.05, (ms - last) / 1000); last = ms; now += dt;
     if (plungeBy !== null) game.pull(Math.max(plungeDrag, Math.min(1, (performance.now() - plungeStart) / 1000)));
+    sound.pauseMusic(paused);
     if (!paused) game.update(dt);
     for (const e of game.events) handle(e);
     game.events.length = 0;

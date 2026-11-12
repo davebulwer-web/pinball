@@ -196,3 +196,20 @@ test('ten minutes of bot play on Fun Fair: no ball escapes or gets stuck', () =>
   assert.equal(lost, 0);
   assert.deepEqual(stuck, []);
 });
+
+test('the theme tune is sixteen bars of waltz time in every part', async () => {
+  const { default: music } = await import('../tables/funfair/music.js');
+  for (const tr of music.tracks) {
+    const beats = tr.notes.trim().split(/\s+/).reduce((n, tok) => n + +(tok.split(':')[1] ?? 1), 0);
+    assert.ok(beats === 48 || beats === 24, `a track is ${beats} beats`);
+    for (const tok of tr.notes.trim().split(/\s+/)) assert.match(tok.split(':')[0], /^(-|[A-G][#b]?\d)$/);
+  }
+});
+
+test('the dot-matrix scenes draw every frame without errors', async () => {
+  const { createDmd } = await import('../ui/dmd.js');
+  for (const [name, sc] of Object.entries(funfair.scenes)) {
+    const d = createDmd(); d.show(['HOOK A DUCK', '5,000'], { secs: sc.secs, scene: sc.draw });
+    for (let t = 0; t <= sc.secs; t += 0.05) d.frame(t, () => ({}));
+  }
+});

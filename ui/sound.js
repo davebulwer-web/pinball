@@ -4,6 +4,8 @@
 // Names in use: flipper, bumper, sling, target, lane, knock, launch, drain, saved, nudge, danger, tilt,
 // start, over, award, drop, bankReset, spin, saucer, eject, kickback, rampEnter, ramp, bonusX, locked,
 // multiball, jackpot, extraBall, bonus, modeStart, modeEnd (the list is also in sound.names)
+// Music: a table's `music` song (see below) plays as a chiptune loop during a game; a table can replace it
+// with an audio file the same way: sound.load({ music: 'sounds/theme.mp3' }), which then loops instead.
 
 let ac = null, on = true;
 const buffers = {};      // name -> AudioBuffer (loaded replacements)
@@ -75,6 +77,42 @@ async function loadOne(name, url) {
   } catch { /* keep the placeholder */ }
 }
 
+// ---------- music ----------
+// A song: { bpm, tracks: [{ type, vol, notes: 'E5:2 G5 C6:2 -:1 ...' }] } where each note is a pitch (or - for
+// a rest) and a length in beats (default 1). Every track loops over the length of the longest one.
+const NOTE = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 };
+const freqOf = n => { const m = /^([A-G])([#b]?)(\d)$/.exec(n); if (!m) return 0; const k = NOTE[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (m[3] - 4) * 12; return 440 * 2 ** (k / 12); };
+function parseSong(song) {
+  const tracks = song.tracks.map(tr => {
+    let at = 0; const notes = [];
+    for (const tok of tr.notes.trim().split(/\s+/)) {
+      const [p, len = '1'] = tok.split(':'); const d = +len;
+      if (p !== '-') notes.push({ at, d, f: freqOf(p) });
+      at += d;
+    }
+    return { ...tr, notes, len: at };
+  });
+  return { beat: 60 / (song.bpm ?? 120), tracks, len: Math.max(...tracks.map(t => t.len)) };
+}
+let song = null, musicOn = false, musicPaused = false, musicTimer = null, songStart = 0, lastTick = 0, musicSrc = null;
+function scheduleMusic() {
+  if (!ac || !musicOn || !song) return;
+  const now = ac.currentTime;
+  // while muted or paused, slide the song along so it carries on from the same place afterwards
+  if (!on || musicPaused) { songStart += now - lastTick; lastTick = now; return; }
+  lastTick = now;
+  const ahead = now + 0.3;
+  for (const tr of song.tracks) {
+    if (!tr.notes.length) continue;
+    for (;;) {
+      const n = tr.notes[tr.i], t = songStart + (tr.loop * song.len + n.at) * song.beat;
+      if (t >= ahead) break;
+      if (t >= now - 0.02) tone(n.f, n.d * song.beat * (tr.legato ?? 0.85), { type: tr.type ?? 'square', vol: tr.vol ?? 0.02, at: t - now });
+      if (++tr.i >= tr.notes.length) { tr.i = 0; tr.loop++; }
+    }
+  }
+}
+
 export const sound = {
   unlock() {
     if (!ac) {
@@ -93,4 +131,30 @@ export const sound = {
     synth[name]?.(opts);
   },
   names: Object.keys(synth),
+  // the table's song (a song object, see above); used unless a `music` file was loaded
+  setSong(s) { song = s ? parseSong(s) : null; },
+  startMusic() {
+    if (!ac || musicOn) return;
+    musicOn = true;
+    if (buffers.music) {
+      musicSrc = ac.createBufferSource(); musicSrc.buffer = buffers.music; musicSrc.loop = true;
+      const g = ac.createGain(); g.gain.value = on ? 0.5 : 0; musicSrc.gain = g;
+      musicSrc.connect(g).connect(ac.destination); musicSrc.start();
+      return;
+    }
+    if (!song) return;
+    songStart = lastTick = ac.currentTime + 0.1;
+    for (const tr of song.tracks) { tr.i = 0; tr.loop = 0; }
+    musicTimer = setInterval(scheduleMusic, 100); scheduleMusic();
+  },
+  stopMusic() {
+    musicOn = false;
+    if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+    if (musicSrc) { try { musicSrc.stop(); } catch { /* already stopped */ } musicSrc = null; }
+  },
+  // pause or mute: a loaded music file is silenced, the chiptune just stops scheduling notes
+  pauseMusic(p) {
+    musicPaused = p;
+    if (musicSrc?.gain) musicSrc.gain.gain.value = p || !on ? 0 : 0.5;
+  },
 };
