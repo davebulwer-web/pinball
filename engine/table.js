@@ -13,16 +13,18 @@
 //   bumpers:  [{ id, c, R, kick, score }]
 //   slings:   [{ id, points: [A, B, C], kick, score }]          kicking face is A to C
 //   targets:  [{ id, a, b, score }]                             standups: solid, score when hit
-//   dropBanks:[{ id, targets: [[a, b], ...], score, resetDelay }]  drop when hit; bankDown when all are down
+//   dropBanks:[{ id, targets: [[a, b], ...], score, resetDelay }]  drop when hit; bankDown when all are down;
+//               resetDelay: null keeps the bank down until a rule resets it
 //   lanes:    [{ id, a, b, score }]                             rollovers (sensors)
 //   spinners: [{ id, a, b, score }]                             spin by the ball's speed, score per turn
-//   saucers:  [{ id, c, hold, eject: { dir, speed }, score }]   catch the ball, then kick it out
+//   saucers:  [{ id, c, R, hold, eject: { dir, speed }, score }] catch the ball (centre within R + ball radius), then kick it out
 //   kickbacks:[{ id, a, b, dir, speed }]                        fire the ball back out while lamp `id` is lit
 //   ramps:    [{ id, path, width, mouth, taper, layer, style: 'ramp' | 'wire', minSpeed, assist, score, funnel }]
 //               the ball enters at path[0] (going along the path) if fast enough, rides on its own layer
 //               between two rails, and drops back to the playfield at the last point
 //   gates:    [{ a, b, oneWay: [nx, ny] }]                      one-way walls
-//   inserts:  [{ id, c, r, label, colour }]                     lamps painted on the playfield (drawing only)
+//   inserts:  [{ id, c, r, label, colour, lit }]                lamps painted on the playfield (drawing only);
+//               lit(game) => 0 | 1 | 2 lights one from game state instead of lamp `id`
 //   rules, lampGroups, modes: see engine/rules.js. `script(game)` may return extra hooks for odd tables.
 
 import { World, Ball, STEP } from './physics.js';
@@ -93,7 +95,7 @@ export class Game {
     }
     for (const l of c.lanes ?? []) w.add({ kind: 'seg', a: l.a, b: l.b, r: 0, sensor: true, id: l.id, tag: 'lane', part: l });
     for (const sp of c.spinners ?? []) { w.add({ kind: 'seg', a: sp.a, b: sp.b, r: 0, sensor: true, id: sp.id, tag: 'spinner', part: sp }); this.spin[sp.id] = { angle: 0, rate: 0, acc: 0 }; }
-    for (const sc of c.saucers ?? []) w.add({ kind: 'circle', c: sc.c, R: 0, r: 0, sensor: true, id: sc.id, tag: 'saucer', part: sc });
+    for (const sc of c.saucers ?? []) w.add({ kind: 'circle', c: sc.c, R: sc.R ?? 0, r: 0, sensor: true, id: sc.id, tag: 'saucer', part: sc });
     for (const k of c.kickbacks ?? []) w.add({ kind: 'seg', a: k.a, b: k.b, r: 0, sensor: true, id: k.id, tag: 'kickback', part: k });
     for (const g of c.gates ?? []) w.add({ kind: 'seg', a: g.a, b: g.b, r: 1, oneWay: g.oneWay, bounce: 0.2, layer: g.layer ?? 0, tag: 'gate' });
     for (const r of c.ramps ?? []) this.buildRamp(r);
@@ -210,6 +212,12 @@ export class Game {
   }
 
   // ---------- drop targets ----------
+  // drop a whole bank without scoring (to open a shot behind it); it stays down until reset
+  dropBank(id) {
+    const bank = this.banks[id]; if (!bank) return;
+    bank.shapes.forEach(s => (s.disabled = true));
+    bank.resetAt = null;
+  }
   resetBank(id, quiet = false) {
     const bank = this.banks[id]; if (!bank) return;
     bank.shapes.forEach(s => (s.disabled = false));
@@ -340,7 +348,8 @@ export class Game {
       const e = h.saucer.part.eject ?? { dir: [0, 1], speed: 300 };
       const l = Math.hypot(e.dir[0], e.dir[1]);
       b.held = false; b.vx = e.dir[0] / l * e.speed + (Math.random() - 0.5) * 20; b.vy = e.dir[1] / l * e.speed;
-      b.x += b.vx / e.speed * 7; b.y += b.vy / e.speed * 7;   // clear of the hole, so it isn't caught again
+      const out = (h.saucer.R ?? 0) + b.r + 2;   // clear of the hole, so it isn't caught again
+      b.x += b.vx / e.speed * out; b.y += b.vy / e.speed * out;
       this.saucerBalls.delete(b);
       this.emit('eject', { id: h.saucer.id });
     }

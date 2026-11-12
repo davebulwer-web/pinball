@@ -192,7 +192,7 @@ export function drawDynamic(ctx, game, sprites, t) {
   }
   // lamp inserts
   for (const ins of cfg.inserts ?? []) {
-    const v = game.lamps[ins.id], on = v === 1 || (v === 2 && Math.floor(t * 5) % 2 === 0);
+    const v = ins.lit ? ins.lit(game) : game.lamps[ins.id], on = v === 1 || (v === 2 && Math.floor(t * 5) % 2 === 0);
     const c = ins.colour ?? col.lamp;
     disc(ctx, ins.c[0], ins.c[1], ins.r ?? 5, on ? c : shade(c, 0.28), on ? shade(c, 0.6) : '#15171c');
     if (ins.label) drawText(ctx, ins.label, ins.c[0] - 2, ins.c[1] - 3, on ? '#1a1206' : shade(c, 0.55));
