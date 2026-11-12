@@ -21,7 +21,7 @@
 //   ['lamp', 'id' | [...], 0 | 1 | 2]           2 = blinking
 //   ['message', 'TEXT', 'second line']  ['sound', 'name']
 //   ['count', 'name', n]  ['setCount', 'name', n]
-//   ['resetBank', 'id']  ['lock']  ['multiball', balls]  ['extraBall']  ['ballSave', secs]
+//   ['resetBank', 'id']  ['dropBank', 'id']  ['lock']  ['multiball', balls]  ['extraBall']  ['ballSave', secs]
 //   ['mode', 'id']  ['endMode', 'id']          modes come from config.modes
 //   ['event', 'name']                           fire another trigger (chains rules)
 //
@@ -92,6 +92,7 @@ export class Rules {
         case 'count': p.counts[x] = (p.counts[x] ?? 0) + (y ?? 1); break;
         case 'setCount': p.counts[x] = y; break;
         case 'resetBank': g.resetBank(x); break;
+        case 'dropBank': g.dropBank(x); break;
         case 'lock': g.lock(); break;
         case 'multiball': g.multiball(x); break;
         case 'extraBall': p.extra++; g.emit('extraBall'); break;

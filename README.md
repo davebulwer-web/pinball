@@ -6,9 +6,9 @@ built into single HTML pages that work offline.
 
 | Table | Status |
 | --- | --- |
+| Fun Fair | Grey box: full layout and rules (F-U-N lanes and skill shot, dodgems, Big Wheel ramp, Rollercoaster rail, Hook a Duck, Big Top multiball, Coconut Shy, Ghost Train), placeholder drawing |
 | Parts Test | Grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
 | Feel Test | Grey test table for tuning the ball, flippers, plunger and camera |
-| Fun Fair | Planned (first themed table) |
 
 ## Play
 
@@ -91,8 +91,8 @@ in its config.
 ## Plan
 
 1. Feel test: physics, flippers, plunger, camera, touch controls on a grey table
-2. Engine parts (this): drop targets, spinners, ramps and wire rails on layers, saucers, locks, multiball, kickback, the rules system
-3. Fun Fair grey box: full layout and rules with placeholder drawing
+2. Engine parts: drop targets, spinners, ramps and wire rails on layers, saucers, locks, multiball, kickback, the rules system
+3. Fun Fair grey box (this): full layout and rules with placeholder drawing
 4. Fun Fair art: Pixellab artwork, dot-matrix scenes, music
 5. Finish: high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade
 6. A second table
