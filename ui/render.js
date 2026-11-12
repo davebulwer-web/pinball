@@ -3,6 +3,7 @@
 // and lit parts (flippers, plunger, bumpers, lamps, balls) are drawn every frame.
 
 import { drawText } from './font.js';
+import { offsetPath } from '../engine/geom.js';
 
 const D = Math.PI / 180;
 
@@ -62,7 +63,7 @@ export function buildPlayfield(cfg) {
   ctx.fillStyle = 'rgba(255,255,255,0.06)';
   for (let y = 8; y < H; y += 16) for (let x = 8; x < W; x += 16) ctx.fillRect(x, y, 1, 1);
   ctx.fillStyle = '#0c0f18'; ctx.fillRect(cfg.lane.x0, cfg.lane.yTop, cfg.lane.x1 - cfg.lane.x0, H - cfg.lane.yTop);
-  drawText(ctx, cfg.name.toUpperCase(), W / 2 - 6, 470, 'rgba(255,255,255,0.10)', { scale: 2, align: 'center' });
+  drawText(ctx, cfg.name.toUpperCase(), W / 2 - 6, cfg.nameY ?? 470, 'rgba(255,255,255,0.10)', { scale: 2, align: 'center' });
 
   // slingshot plastics
   const sl = mask(W, H);
@@ -71,17 +72,68 @@ export function buildPlayfield(cfg) {
   // walls and rails
   const wm = mask(W, H);
   for (const w of cfg.walls ?? []) {
+    if (w.layer) continue;   // raised walls are drawn on the overlay
     const rad = Math.max(1.2, w.r ?? 1);
     if (w.path) for (let i = 0; i + 1 < w.path.length; i++) wm.line(w.path[i], w.path[i + 1], rad);
     if (w.arc) wm.arc(w.arc.c, w.arc.R, w.arc.from * D, w.arc.to * D, rad);
   }
   for (const g of cfg.gates ?? []) wm.line(g.a, g.b, 0.8);
+  for (const r of cfg.ramps ?? []) for (const [a, b] of r.funnelWalls ?? []) wm.line(a, b, 1.5);
   for (const p of cfg.posts ?? []) wm.stamp(p.c[0], p.c[1], p.R + 0.5);
   wm.paint(ctx, col.wall, col.wallDark, '#e4e8f2');
   // rubber kicking faces of the slings
   const rb = mask(W, H);
   for (const s of cfg.slings ?? []) rb.line(s.points[0], s.points[2], 1.6);
   rb.paint(ctx, col.rubber, '#777', null);
+  // saucer holes and drop target slots are part of the playfield
+  for (const sc of cfg.saucers ?? []) { disc(ctx, sc.c[0], sc.c[1], 8, '#0a0c12', '#6a7080'); disc(ctx, sc.c[0], sc.c[1], 5, '#000', null); }
+  return { base: cv, overlay: buildOverlay(cfg) };
+}
+
+// Ramps and wire rails, drawn above the playfield and any ball on it.
+function buildOverlay(cfg) {
+  const [W, H] = cfg.size, col = cfg.colours;
+  const [cv, ctx] = canvasOf(W, H);
+  for (const r of cfg.ramps ?? []) {
+    const left = r.left ?? offsetPath(r.path, (r.width ?? 16) / 2), right = r.right ?? offsetPath(r.path, -(r.width ?? 16) / 2);
+    if (r.style !== 'wire') {
+      // the ramp floor, with a darker band every 8 pixels along it
+      const fl = mask(W, H);
+      for (let i = 0; i + 1 < r.path.length; i++) { fl.tri(left[i], right[i], right[i + 1]); fl.tri(left[i], right[i + 1], left[i + 1]); }
+      fl.paint(ctx, col.ramp ?? '#5a7fb8', col.rampDark ?? '#2a3f66', null);
+      ctx.fillStyle = col.rampDark ?? '#2a3f66';
+      let dist = 0;
+      for (let i = 0; i + 1 < r.path.length; i++) {
+        const seg = Math.hypot(r.path[i + 1][0] - r.path[i][0], r.path[i + 1][1] - r.path[i][1]);
+        for (let d = (8 - dist % 8) % 8; d < seg; d += 8) {
+          const t = d / seg;
+          const a = [left[i][0] + (left[i + 1][0] - left[i][0]) * t, left[i][1] + (left[i + 1][1] - left[i][1]) * t];
+          const b = [right[i][0] + (right[i + 1][0] - right[i][0]) * t, right[i][1] + (right[i + 1][1] - right[i][1]) * t];
+          const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]));
+          for (let k = 1; k < n; k++) ctx.fillRect(Math.floor(a[0] + (b[0] - a[0]) * k / n), Math.floor(a[1] + (b[1] - a[1]) * k / n), 1, 1);
+        }
+        dist += seg;
+      }
+      const rails = mask(W, H);
+      for (const rail of [left, right]) for (let i = 0; i + 1 < rail.length; i++) rails.line(rail[i], rail[i + 1], 1.5);
+      rails.paint(ctx, col.wall, col.wallDark, '#e4e8f2');
+    } else {
+      // wire rail: two thin chrome wires with ties across
+      ctx.fillStyle = '#3a3f4a';
+      for (let i = 0; i < r.path.length; i += 2) {
+        const a = left[i], b = right[i], n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]));
+        for (let k = 0; k <= n; k++) ctx.fillRect(Math.floor(a[0] + (b[0] - a[0]) * k / n), Math.floor(a[1] + (b[1] - a[1]) * k / n), 1, 1);
+      }
+      const wires = mask(W, H);
+      for (const rail of [left, right]) for (let i = 0; i + 1 < rail.length; i++) wires.line(rail[i], rail[i + 1], 0.9);
+      wires.paint(ctx, col.wire ?? '#d8dce6', '#5a606e', null);
+    }
+  }
+  // raised walls
+  const wm = mask(W, H);
+  let any = false;
+  for (const w of cfg.walls ?? []) if (w.layer) { any = true; for (let i = 0; i + 1 < (w.path?.length ?? 0); i++) wm.line(w.path[i], w.path[i + 1], Math.max(1.2, w.r ?? 1)); }
+  if (any) wm.paint(ctx, col.wall, col.wallDark, '#e4e8f2');
   return cv;
 }
 
@@ -138,6 +190,40 @@ export function drawDynamic(ctx, game, sprites, t) {
     disc(ctx, cx, cy, 5, lit ? col.lamp : '#3b3420', lit ? '#a07010' : '#22201a');
     if (l.label) drawText(ctx, l.label, cx - 2, cy - 3, lit ? '#3a2400' : '#6d6450');
   }
+  // lamp inserts
+  for (const ins of cfg.inserts ?? []) {
+    const v = game.lamps[ins.id], on = v === 1 || (v === 2 && Math.floor(t * 5) % 2 === 0);
+    const c = ins.colour ?? col.lamp;
+    disc(ctx, ins.c[0], ins.c[1], ins.r ?? 5, on ? c : shade(c, 0.28), on ? shade(c, 0.6) : '#15171c');
+    if (ins.label) drawText(ctx, ins.label, ins.c[0] - 2, ins.c[1] - 3, on ? '#1a1206' : shade(c, 0.55));
+  }
+  // drop targets: up, or a dark slot when down
+  for (const bank of cfg.dropBanks ?? []) bank.targets.forEach(([a, b], i) => {
+    const s = game.banks?.[bank.id]?.shapes[i]; const down = s?.disabled;
+    const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]));
+    for (let k = 0; k <= n; k++) {
+      const x = Math.floor(a[0] + (b[0] - a[0]) * k / n), y = Math.floor(a[1] + (b[1] - a[1]) * k / n);
+      if (down) { ctx.fillStyle = '#07080c'; ctx.fillRect(x, y, 1, 2); }
+      else { ctx.fillStyle = '#fff2c0'; ctx.fillRect(x, y - 1, 1, 1); ctx.fillStyle = '#e07a20'; ctx.fillRect(x, y, 1, 2); ctx.fillStyle = '#6a3410'; ctx.fillRect(x, y + 2, 1, 1); }
+    }
+  });
+  // spinners: a flag that turns
+  for (const sp of cfg.spinners ?? []) {
+    const ang = game.spin?.[sp.id]?.angle ?? 0, h = Math.abs(Math.cos(ang)) * 3;
+    const n = Math.ceil(Math.hypot(sp.b[0] - sp.a[0], sp.b[1] - sp.a[1]));
+    for (let k = 0; k <= n; k++) {
+      const x = Math.floor(sp.a[0] + (sp.b[0] - sp.a[0]) * k / n), y = Math.floor(sp.a[1] + (sp.b[1] - sp.a[1]) * k / n);
+      ctx.fillStyle = '#dfe3ec'; ctx.fillRect(x, Math.round(y - h), 1, Math.max(1, Math.round(h * 2)));
+    }
+    disc(ctx, sp.a[0], sp.a[1], 1.5, '#777', null); disc(ctx, sp.b[0], sp.b[1], 1.5, '#777', null);
+  }
+  // kickbacks: a small plunger at the bottom of the lane
+  for (const k of cfg.kickbacks ?? []) {
+    const fired = t - (game.flashes[k.id] ?? -9) < 0.15;
+    const x0 = Math.ceil(Math.min(k.a[0], k.b[0])) + 1, w = Math.floor(Math.abs(k.b[0] - k.a[0])) - 2, y = Math.round(k.a[1]) + (fired ? -4 : 2);
+    ctx.fillStyle = '#c03030'; ctx.fillRect(x0, y, w, 2);
+    ctx.fillStyle = '#8a8f9a'; ctx.fillRect(x0 + w / 2 - 1, y + 2, 2, 12);
+  }
   // standup targets
   for (const tg of cfg.targets ?? []) {
     const lit = game.lamps[tg.id], fl = t - (game.flashes[tg.id] ?? -9) < 0.12;
@@ -174,7 +260,20 @@ export function drawDynamic(ctx, game, sprites, t) {
     for (let k = y + 5; k < y + 40; k += 3) ctx.fillRect(x0 + 2, k, w - 4, 1);
   }
   for (const f of game.flippers) drawFlipper(ctx, f);
-  for (const b of game.world.balls) ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
+  for (const b of game.world.balls) if (!b.layer) ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
+  // ramps and wires over the playfield, then balls riding on them (with a shadow)
+  if (sprites.overlay) ctx.drawImage(sprites.overlay, 0, 0);
+  for (const b of game.world.balls) if (b.layer) {
+    ctx.globalAlpha = 0.35; disc(ctx, b.x + 2, b.y + 3, b.r, '#000', null); ctx.globalAlpha = 1;
+    ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
+  }
+}
+
+// a colour darkened toward black (k = 0..1 of the original brightness)
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v * k));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 
 // Collision shapes drawn over everything (debug overlay).
@@ -182,11 +281,12 @@ export function drawDebug(ctx, game) {
   ctx.save();
   ctx.lineWidth = 0.5;
   for (const s of [...game.world.shapes, ...game.world.movers]) {
-    ctx.strokeStyle = s.sensor ? '#ff0' : s.kick ? '#f0f' : s.oneWay ? '#0ff' : '#0f0';
+    if (s.disabled) continue;
+    ctx.strokeStyle = s.sensor ? '#ff0' : s.kick ? '#f0f' : s.oneWay ? '#0ff' : s.layer ? '#f80' : '#0f0';
     ctx.beginPath();
     if (s.kind === 'seg') { ctx.moveTo(s.a[0], s.a[1]); ctx.lineTo(s.b[0], s.b[1]); }
     else if (s.kind === 'arc') ctx.arc(s.c[0], s.c[1], s.R, s.a0, s.a1);
-    else if (s.kind === 'circle') ctx.arc(s.c[0], s.c[1], s.R, 0, Math.PI * 2);
+    else if (s.kind === 'circle') ctx.arc(s.c[0], s.c[1], Math.max(s.R, 1), 0, Math.PI * 2);
     else if (s.kind === 'flipper') { const f = s.part, [tx, ty] = f.tip(); ctx.moveTo(f.px, f.py); ctx.lineTo(tx, ty); }
     ctx.stroke();
   }

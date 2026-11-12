@@ -51,7 +51,8 @@ export function shapeBox(s) {
 export class Ball {
   constructor(x, y, r = 5) {
     this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.r = r;
-    this.layer = 0; this.live = true; this.touching = new Set(); // sensors currently overlapped
+    this.layer = 0; this.live = true; this.held = false;
+    this.touching = new Set(); // sensors currently overlapped
   }
 }
 
@@ -72,6 +73,7 @@ export class World {
   }
   addPart(p) { this.parts.push(p); p.shapes?.forEach(s => this.add(s)); return p; }
   addBall(b) { this.balls.push(b); return b; }
+  setLayer(b, layer) { if (b.layer !== layer) { b.layer = layer; b.touching.clear(); } }
 
   // Advance by exactly one fixed step.
   step() {
@@ -89,7 +91,7 @@ export class World {
     for (const p of this.parts) p.update?.(h);
     const damp = 1 - this.damping * h;
     for (const b of this.balls) {
-      if (!b.live) continue;
+      if (!b.live || b.held) continue;       // a held ball (in a saucer) doesn't move
       b.vy += this.gravity * h;
       b.vx *= damp; b.vy *= damp;
       const sp = Math.hypot(b.vx, b.vy);
@@ -169,7 +171,7 @@ export class World {
     const bs = this.balls;
     for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) {
       const a = bs[i], b = bs[j];
-      if (!a.live || !b.live || a.layer !== b.layer) continue;
+      if (!a.live || !b.live || a.held || b.held || a.layer !== b.layer) continue;
       let nx = b.x - a.x, ny = b.y - a.y; const d = Math.hypot(nx, ny), reach = a.r + b.r;
       if (d >= reach || d < 1e-6) continue;
       nx /= d; ny /= d;

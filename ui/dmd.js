@@ -62,7 +62,7 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
       return;
     }
     text(`P${s.player}`, 0, 0, { v: 1 });
-    text(`B${s.ball}`, 0, 9, { v: 1 });
+    if (s.mode) text(s.mode, 0, 9, { v: Math.floor(t * 4) % 2 ? 2 : 1 }); else text(`B${s.ball}`, 0, 9, { v: 1 });
     const sc = commas(s.score);
     text(sc, DMD_W - 1, 1, { sc: width(sc, 2) <= DMD_W - 16 ? 2 : 1, align: 'right' });
   }
