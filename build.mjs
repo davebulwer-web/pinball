@@ -1,5 +1,6 @@
 // Builds self-contained pages (code and art inlined) that run offline:
 //   dist/<table>.html    one page per table
+//   dist/<table>-artifact.html  the same page, for publishing as a claude.ai artifact
 //   dist/index.html      a menu of the tables
 // Needs esbuild: `npm install`.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -21,7 +22,14 @@ for (const id of tableIds) {
   const artFile = `./tables/${id}/art.js`;
   const art = existsSync(artFile) ? `window.TABLE_ART=${JSON.stringify(Object.fromEntries(Object.entries((await import(artFile)).default).map(([k, f]) => [k, uri(f)])))}` : '';
   writeFileSync(`dist/${id}.html`, fill('ui/index.html', { title: `${config.name} · Pixel Pinball`, art, js: await bundle(`tables/${id}/main.js`) }));
-  console.log(`built dist/${id}.html`);
+  // the same page without the html/head/body wrapper, for publishing as a claude.ai artifact
+  const page = readFileSync(`dist/${id}.html`, 'utf8');
+  writeFileSync(`dist/${id}-artifact.html`, page
+    .replace(/<!doctype html>\s*<html[^>]*>\s*<head>\s*<meta charset="utf-8">\s*<meta name="viewport"[^>]*>\s*/i, '')
+    .replace('</head>', '').replace('<body>', '').replace(/<\/body>\s*<\/html>\s*$/, '')
+    .replace(/<title>[^<]*<\/title>/, `<title>Pinball ${config.name}</title>`)
+    .replace(':root { --bg: #000; --fg: #8a8f9a; }', ':root { --bg: #000; --fg: #8a8f9a; color-scheme: dark; }'));
+  console.log(`built dist/${id}.html and dist/${id}-artifact.html`);
 }
 const links = tableIds.map(id => `<li><a href="${id}.html">${names[id]}</a></li>`).join('');
 writeFileSync('dist/index.html', `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pixel Pinball</title>
