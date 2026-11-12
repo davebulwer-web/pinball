@@ -2,7 +2,8 @@
 // synthesised placeholder; a table can replace any of them with an audio file by name:
 //   sound.load({ bumper: 'data:audio/ogg;base64,...', drain: 'sounds/drain.mp3' })
 // Names in use: flipper, bumper, sling, target, lane, knock, launch, drain, saved, nudge, danger, tilt,
-// start, over, award
+// start, over, award, drop, bankReset, spin, saucer, eject, kickback, rampEnter, ramp, bonusX, locked,
+// multiball, jackpot, extraBall, bonus, modeStart, modeEnd (the list is also in sound.names)
 
 let ac = null, on = true;
 const buffers = {};      // name -> AudioBuffer (loaded replacements)
@@ -48,6 +49,22 @@ const synth = {
   tilt: () => tone(110, 0.8, { type: 'sawtooth', vol: 0.07, slide: -40 }),
   start: () => [392, 523, 659, 784].forEach((f, i) => tone(f, 0.09, { at: i * 0.08, vol: 0.05 })),
   over: () => [523, 392, 330, 262].forEach((f, i) => tone(f, 0.18, { at: i * 0.16, vol: 0.05, type: 'triangle' })),
+  drop: () => { tone(180, 0.05, { vol: 0.07, type: 'triangle', slide: -80 }); noise(0.04, { vol: 0.08, freq: 1200 }); },
+  bankReset: () => [0, 0.05, 0.1].forEach(at => noise(0.03, { vol: 0.07, freq: 900, at })),
+  spin: () => tone(1500 + Math.random() * 200, 0.02, { vol: 0.03 }),
+  saucer: () => { tone(120, 0.15, { type: 'triangle', vol: 0.1, slide: -50 }); },
+  eject: () => { noise(0.06, { vol: 0.12, freq: 600 }); tone(90, 0.08, { type: 'triangle', vol: 0.1 }); },
+  kickback: () => { noise(0.08, { vol: 0.14, freq: 500 }); tone(100, 0.12, { type: 'square', vol: 0.06, slide: 300 }); },
+  rampEnter: () => tone(300, 0.25, { type: 'triangle', vol: 0.04, slide: 400 }),
+  ramp: () => [523, 784].forEach((f, i) => tone(f, 0.08, { at: i * 0.07, vol: 0.05 })),
+  bonusX: () => [784, 988, 1175].forEach((f, i) => tone(f, 0.06, { at: i * 0.05, vol: 0.05 })),
+  locked: () => [392, 392, 523].forEach((f, i) => tone(f, 0.12, { at: i * 0.13, vol: 0.06 })),
+  multiball: () => [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, 0.1, { at: i * 0.09, vol: 0.06 })),
+  jackpot: () => { for (let i = 0; i < 12; i++) tone(i % 2 ? 1319 : 1047, 0.07, { at: i * 0.07, vol: 0.06 }); },
+  extraBall: () => [659, 784, 988, 1319].forEach((f, i) => tone(f, 0.12, { at: i * 0.1, vol: 0.06, type: 'triangle' })),
+  bonus: () => { for (let i = 0; i < 10; i++) tone(440 + i * 60, 0.04, { at: i * 0.06, vol: 0.04 }); },
+  modeStart: () => [330, 440, 554, 659].forEach((f, i) => tone(f, 0.1, { at: i * 0.08, vol: 0.05, type: 'sawtooth' })),
+  modeEnd: () => [659, 554, 440].forEach((f, i) => tone(f, 0.1, { at: i * 0.08, vol: 0.05, type: 'triangle' })),
   award: () => [660, 880, 1100, 1320].forEach((f, i) => tone(f, 0.07, { at: i * 0.06, vol: 0.05 })),
 };
 

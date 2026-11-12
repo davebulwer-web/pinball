@@ -1,2 +1,2 @@
 // Every table, in menu order.
-export const tableIds = ['test'];
+export const tableIds = ['parts', 'test'];

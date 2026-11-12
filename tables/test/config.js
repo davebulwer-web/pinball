@@ -74,47 +74,19 @@ export default {
     { id: 'laneN', a: [169, 80], b: [196, 80], label: 'N' },
   ],
 
-  // Small rules so the score strip has something to say. Milestone 2 replaces this with the rules system.
-  rules(game) {
-    const lit = () => LANES.filter(id => game.lamps[id]);
-    const targets = ['tgt1', 'tgt2', 'tgt3'];
-    return {
-      start() { [...LANES, ...targets].forEach(id => (game.lamps[id] = 0)); },
-      sensor(id) {
-        if (!LANES.includes(id) || game.lamps[id]) return;
-        game.lamps[id] = 1;
-        if (lit().length === 3) {
-          game.addScore(5000);
-          game.emit('message', { text: 'F-U-N COMPLETE', sub: '5,000' });
-          setTimeoutTicks(game, 0.6, () => LANES.forEach(l => (game.lamps[l] = 0)));
-        }
-      },
-      // a flipper press moves the lit lanes along one (lane change)
-      flip(side) {
-        const v = LANES.map(id => game.lamps[id]);
-        if (v.every(x => x === v[0])) return;
-        const r = side === 'left' ? [...v.slice(1), v[0]] : [v[2], ...v.slice(0, 2)];
-        LANES.forEach((id, i) => (game.lamps[id] = r[i]));
-      },
-      hit(id) {
-        if (!targets.includes(id)) return;
-        game.lamps[id] = 1;
-        if (targets.every(t => game.lamps[t])) {
-          game.addScore(10000);
-          game.emit('message', { text: 'TARGETS DONE', sub: '10,000' });
-          targets.forEach(t => (game.lamps[t] = 0));
-        }
-      },
-    };
+  // Small rules so the score strip has something to say.
+  lampGroups: {
+    fun: { lamps: LANES, rotate: true, reset: true },
+    targets: { lamps: ['tgt1', 'tgt2', 'tgt3'], reset: true },
   },
+  rules: [
+    { on: 'lane:laneF', do: [['lamp', 'laneF', 1]] },
+    { on: 'lane:laneU', do: [['lamp', 'laneU', 1]] },
+    { on: 'lane:laneN', do: [['lamp', 'laneN', 1]] },
+    { on: 'complete:fun', do: [['score', 5000], ['message', 'F-U-N COMPLETE', '5,000']] },
+    { on: 'hit:tgt1', do: [['lamp', 'tgt1', 1]] },
+    { on: 'hit:tgt2', do: [['lamp', 'tgt2', 1]] },
+    { on: 'hit:tgt3', do: [['lamp', 'tgt3', 1]] },
+    { on: 'complete:targets', do: [['score', 10000], ['message', 'TARGETS DONE', '10,000']] },
+  ],
 };
-
-// run fn after `secs` of game time (game time stops when paused)
-function setTimeoutTicks(game, secs, fn) {
-  const at = game.world.time + secs;
-  const prev = game.world.parts.find(p => p.timers);
-  const host = prev ?? game.world.addPart({ timers: [], update() {
-    for (const t of [...this.timers]) if (game.world.time >= t.at) { this.timers.splice(this.timers.indexOf(t), 1); t.fn(); }
-  } });
-  host.timers.push({ at, fn });
-}

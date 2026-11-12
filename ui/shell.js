@@ -16,8 +16,8 @@ const W = 320, DMD_ROWS = 32;
 export function startTable(cfg, { canvas = document.getElementById('screen') } = {}) {
   const ctx = canvas.getContext('2d');
   const game = new Game(cfg);
-  const playfield = buildPlayfield(cfg);
-  const sprites = { ball: ballSprite(cfg.ballRadius ?? 5) };
+  const { base: playfield, overlay } = buildPlayfield(cfg);
+  const sprites = { ball: ballSprite(cfg.ballRadius ?? 5), overlay };
   const dmd = createDmd(cfg.dmd);
   sound.load(cfg.sounds);
   const params = new URLSearchParams(location.search);
@@ -138,15 +138,27 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
   function handle(e) {
     switch (e.type) {
       case 'flip': sound.play('flipper'); break;
-      case 'bumper': case 'sling': case 'target': case 'lane': case 'launch': case 'knock': sound.play(e.type, e); break;
+      case 'bumper': case 'sling': case 'lane': case 'launch': case 'knock': case 'drop': case 'spin': case 'saucer':
+      case 'eject': case 'kickback': case 'rampEnter': case 'ramp': case 'bankReset': case 'bonusX':
+        sound.play(e.type, e); break;
+      case 'hit': sound.play('target'); break;
+      case 'sound': sound.play(e.name); break;
       case 'start': sound.play('start'); break;
       case 'serve': dmd.show([`PLAYER ${e.player}`, `BALL ${e.ball}`], { secs: 1.5 }); break;
       case 'saved': sound.play('saved'); dmd.show('BALL SAVED', { blink: true, secs: 1.6 }); break;
       case 'drain': sound.play('drain'); if (!e.tilted) dmd.show('BALL LOST', { secs: 1.2 }); break;
+      case 'bonus': sound.play('bonus'); dmd.show([`BONUS ${commas(e.bonus)} X${e.x}`, commas(e.total)], { secs: 2.2 }); break;
+      case 'shootAgain': sound.play('extraBall'); dmd.show('SHOOT AGAIN', { blink: true, secs: 2 }); break;
+      case 'locked': sound.play('locked'); break;
+      case 'multiball': sound.play('multiball'); break;
+      case 'jackpot': sound.play('jackpot'); break;
+      case 'extraBall': sound.play('extraBall'); break;
+      case 'modeStart': sound.play('modeStart'); dmd.show([e.name, `${e.secs} SECONDS`], { secs: 2 }); break;
+      case 'modeEnd': sound.play('modeEnd'); dmd.show([e.name, 'OVER'], { secs: 1.5 }); break;
       case 'nudge': sound.play('nudge'); shakeUntil = game.world.time + 0.12; shakeDx = e.dx ? -Math.sign(e.dx) * 2 : 0; break;
       case 'danger': sound.play('danger'); dmd.show('DANGER', { blink: true, secs: 1.5 }); break;
       case 'tilt': sound.play('tilt'); dmd.clearQueue(); dmd.show('TILT', { blink: true, secs: 3 }); break;
-      case 'message': sound.play('award'); dmd.show(e.sub ? [e.text, e.sub] : e.text, { secs: 2 }); break;
+      case 'message': sound.play('award'); dmd.show(e.sub ? [e.text, e.sub] : e.text, { secs: 2, blink: /JACKPOT|MULTIBALL/.test(e.text) }); break;
       case 'over':
         sound.play('over'); overAt = game.world.time;
         lastScore = e.scores[0]; save('lastScore', lastScore);
@@ -192,6 +204,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
       attract: game.state === 'attract' || (game.state === 'over' && !dmd.busy()),
       title: cfg.name.toUpperCase(), touch: touchSeen || 'ontouchstart' in window, lastScore,
       player: game.player?.n ?? 1, ball: game.player?.ball ?? 1, score: game.player?.score ?? 0,
+      mode: Object.values(game.modes).map(m => `${Math.ceil(m.left)}`)[0],
     }));
     dmd.paint(ctx, 0, 0);
     if (paused) {
