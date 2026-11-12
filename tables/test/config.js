@@ -12,7 +12,7 @@ export default {
   id: 'test',
   name: 'Feel Test',
   size: [320, 640],
-  gravity: 900,
+  gravity: 780,
   ballRadius: 5,
   balls: 3,
   ballSave: 6,

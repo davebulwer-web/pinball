@@ -46,9 +46,9 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
   const canPlunge = () => game.state === 'ready' && game.ballInLane();
   const held = { left: new Set(), right: new Set() };          // which pointers/keys hold each flipper
   const setFlip = (side, who, down) => {
-    const s = held[side]; const before = s.size > 0;
+    const s = held[side];
     down ? s.add(who) : s.delete(who);
-    if ((s.size > 0) !== before) game.flip(side, s.size > 0);
+    game.flip(side, s.size > 0);   // always pass the state on, so the game never keeps a stale one
   };
   let plungeBy = null, plungeStart = 0, plungeDrag = 0;        // who is pulling the plunger
   const beginPlunge = who => { plungeBy = who; plungeStart = performance.now(); plungeDrag = 0; };
@@ -62,14 +62,15 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
     const r = canvas.getBoundingClientRect();
     if (paused) { paused = false; return; }
     if (ev.clientY - r.top < (DMD_ROWS / H) * r.height && game.state !== 'attract' && game.state !== 'over') { paused = true; return; }
-    if (startGame()) { pointers.set(ev.pointerId, { mode: 'none' }); return; }
-    const p = { x: ev.clientX, y: ev.clientY, t: performance.now(), nudged: false };
+    if (startGame()) { pointers.set(ev.pointerId, { mode: 'none', type: ev.pointerType }); return; }
+    const p = { x: ev.clientX, y: ev.clientY, t: performance.now(), nudged: false, type: ev.pointerType };
     if (canPlunge() && !plungeBy) { p.mode = 'plunge'; beginPlunge(ev.pointerId); }
     else { p.mode = 'flip'; p.side = ev.clientX < window.innerWidth / 2 ? 'left' : 'right'; setFlip(p.side, ev.pointerId, true); if (ev.pointerType === 'touch') navigator.vibrate?.(6); }
     pointers.set(ev.pointerId, p);
   };
   const onMove = ev => {
     const p = pointers.get(ev.pointerId); if (!p) return;
+    if (ev.pointerType === 'mouse' && ev.buttons === 0) { onUp(ev); return; }   // button let go outside the page
     const dx = ev.clientX - p.x, dy = ev.clientY - p.y;
     if (p.mode === 'plunge') plungeDrag = Math.max(0, Math.min(1, dy / (window.innerHeight * 0.18)));
     else if (p.mode === 'flip' && !p.nudged && performance.now() - p.t < 350 && dy < -Math.max(40, window.innerHeight * 0.06)) {
@@ -88,6 +89,14 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
   window.addEventListener('pointerup', onUp);
   window.addEventListener('pointercancel', onUp);
   window.addEventListener('contextmenu', e => e.preventDefault());
+  // Safety nets for a lost pointerup (it can happen on phones and inside frames): when no finger is
+  // left on the glass, or the page loses focus, let go of everything.
+  const releaseAll = type => {
+    for (const [id, p] of [...pointers]) if (!type || p.type === type) onUp({ pointerId: id });
+  };
+  window.addEventListener('touchend', e => { if (e.touches.length === 0) releaseAll('touch'); });
+  window.addEventListener('touchcancel', e => { if (e.touches.length === 0) releaseAll('touch'); });
+  window.addEventListener('blur', () => { releaseAll(); for (const side of ['left', 'right']) { held[side].clear(); game.flip(side, false); } });
 
   const keys = {
     KeyZ: 'left', ShiftLeft: 'left', ControlLeft: 'left',
@@ -97,7 +106,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
     if (ev.repeat) { ev.preventDefault(); return; }
     sound.unlock();
     const c = ev.code;
-    if (keys[c]) { ev.preventDefault(); if (!paused) setFlip(keys[c], c, down); return; }
+    if (keys[c]) { ev.preventDefault(); if (!paused || !down) setFlip(keys[c], c, down); return; }
     if (c === 'Space' || c === 'Enter' || c === 'ArrowDown') {
       ev.preventDefault();
       if (down) { if (paused) paused = false; else if (!startGame() && canPlunge() && !plungeBy) beginPlunge(c); }
@@ -114,7 +123,12 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
   };
   window.addEventListener('keydown', e => onKey(e, true));
   window.addEventListener('keyup', e => onKey(e, false));
-  document.addEventListener('visibilitychange', () => { if (document.hidden && game.state === 'play') paused = true; });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) return;
+    if (game.state === 'play') paused = true;
+    releaseAll(); for (const side of ['left', 'right']) { held[side].clear(); game.flip(side, false); }
+    for (const c of Object.keys(keys)) for (const side of ['left', 'right']) held[side].delete(c);
+  });
 
   // ---------- events from the game ----------
   function handle(e) {
