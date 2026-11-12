@@ -57,7 +57,7 @@ export class Game {
       const [A, B, C] = s.points;
       w.add({ kind: 'seg', a: A, b: B, r: 1, bounce: 0.5, tag: 'slingside' });
       w.add({ kind: 'seg', a: B, b: C, r: 1, bounce: 0.5, tag: 'slingside' });
-      w.add({ kind: 'seg', a: A, b: C, r: 1.5, bounce: 0.6, kick: s.kick ?? 330, kickMin: s.kickMin ?? 70, id: s.id, tag: 'sling', part: s });
+      w.add({ kind: 'seg', a: A, b: C, r: 1.5, bounce: s.bounce ?? 0.4, kick: s.kick ?? 260, kickMin: s.kickMin ?? 110, id: s.id, tag: 'sling', part: s });
     }
     for (const t of c.targets ?? []) w.add({ kind: 'seg', a: t.a, b: t.b, r: 1.5, bounce: 0.45, id: t.id, tag: 'target', part: t, hitMin: 60 });
     for (const l of c.lanes ?? []) w.add({ kind: 'seg', a: l.a, b: l.b, r: 0, sensor: true, id: l.id, tag: 'lane', part: l });

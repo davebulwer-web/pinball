@@ -29,14 +29,17 @@ export default {
 
   walls: [
     { arc: { c: [160, 160], R: 152, from: 180, to: 360 } },          // the top of the cabinet
-    { path: [[8, 160], [8, 350], [20, 390], [20, 650]] },             // left side, kinked in above the outlane
+    // sides: below the orbits they slope in to the inlane guides, so a ball from an orbit feeds an inlane
+    // (no outlanes on this table)
+    { path: [[8, 160], [8, 650]] },
+    { path: [[8, 350], [34, 432]] },
     { path: [[312, 160], [312, 650]] },                               // right side (outside of the shooter lane)
     { path: [[294, 205], [294, 650]] },                               // shooter lane inner wall
-    { path: [[294, 350], [282, 390], [282, 650]] },                   // right side kink, matching the left
+    { path: [[294, 350], [268, 432]] },
     // orbit lanes down each side
     { path: [[38, 190], [38, 330]], r: 2 },
     { path: [[264, 190], [264, 330]], r: 2 },
-    // inlane guides (the outlane is between these and the side walls)
+    // inlane guides
     { path: leftGuide },
     { path: [[268, 432], [268, 500], [201, 556]] },
     // peaked back of the target bank

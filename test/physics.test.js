@@ -123,3 +123,23 @@ test('no ball comes to a stop on the playfield in 15 minutes of bot play', () =>
   }
   assert.deepEqual(stuck, []);
 });
+
+test('the slingshots cannot keep a ball bouncing between them', () => {
+  let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const g = new Game({ ...testTable, balls: 100000, ballSave: 0 });
+  g.start(1);
+  let hold = 0, run = 0, last = null, longest = 0;
+  for (let i = 0; i < 60 * 600; i++) {
+    const b = g.world.balls[0];
+    if (b && b.y > 535 && b.y < 585 && b.vy > 40 && rnd() < 0.85) { g.flip(b.x < 151 ? 'left' : 'right', true); hold = i; }
+    else if (i - hold > 12) { g.flip('left', false); g.flip('right', false); }
+    if (g.state === 'ready' && g.ballInLane()) { g.pull(0.6 + rnd() * 0.4); for (let k = 0; k < 20; k++) g.update(1 / 60); g.launch(); }
+    g.update(1 / 60);
+    for (const e of g.events) {
+      if (e.type === 'sling') { run = last && last !== e.id ? run + 1 : 1; last = e.id; longest = Math.max(longest, run); }
+      else if (e.type === 'bumper' || e.type === 'target' || e.type === 'flip') { run = 0; last = null; }
+    }
+    g.events.length = 0;
+  }
+  assert.ok(longest < 8, `ball went back and forth between the slings ${longest} times`);
+});
