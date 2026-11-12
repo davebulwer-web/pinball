@@ -103,9 +103,13 @@ export function startTable(cfg, { canvas = document.getElementById('screen') } =
     Slash: 'right', ShiftRight: 'right', ControlRight: 'right',
   };
   const onKey = (ev, down) => {
+    const c = ev.code;
+    // Windows sends no keyup for the first Shift (or Ctrl) let go while both are held, so trust the
+    // modifier flags on every key event: if Shift isn't down, neither Shift key holds a flipper.
+    for (const [mod, codes] of [['shiftKey', ['ShiftLeft', 'ShiftRight']], ['ctrlKey', ['ControlLeft', 'ControlRight']]])
+      if (!ev[mod]) for (const k of codes) if (k !== c || !down) for (const side of ['left', 'right']) if (held[side].has(k)) setFlip(side, k, false);
     if (ev.repeat) { ev.preventDefault(); return; }
     sound.unlock();
-    const c = ev.code;
     if (keys[c]) { ev.preventDefault(); if (!paused || !down) setFlip(keys[c], c, down); return; }
     if (c === 'Space' || c === 'Enter' || c === 'ArrowDown') {
       ev.preventDefault();
