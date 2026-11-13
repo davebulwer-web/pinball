@@ -67,6 +67,7 @@ const synth = {
   bonus: () => { for (let i = 0; i < 10; i++) tone(440 + i * 60, 0.04, { at: i * 0.06, vol: 0.04 }); },
   modeStart: () => [330, 440, 554, 659].forEach((f, i) => tone(f, 0.1, { at: i * 0.08, vol: 0.05, type: 'sawtooth' })),
   modeEnd: () => [659, 554, 440].forEach((f, i) => tone(f, 0.1, { at: i * 0.08, vol: 0.05, type: 'triangle' })),
+  highScore: () => [523, 659, 784, 1047, 1319, 1047, 1319].forEach((f, i) => tone(f, 0.1, { at: i * 0.1, vol: 0.06, type: 'triangle' })),
   award: () => [660, 880, 1100, 1320].forEach((f, i) => tone(f, 0.07, { at: i * 0.06, vol: 0.05 })),
 };
 

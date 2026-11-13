@@ -12,11 +12,20 @@ built into single HTML pages that work offline.
 
 ## Play
 
-Build, then open `dist/index.html` (the table menu) or a table's page such as `dist/test.html`.
+Build, then open `dist/index.html`: the table menu, with every table in one page that works offline. Pick a
+table to play it; `index.html#funfair` opens one straight away. Each table also has its own page, such as
+`dist/funfair.html`. When this project and [Fruit Machines](https://github.com/davebulwer-web/fruitmachines)
+sit side by side (in one folder, or both on GitHub Pages), the menu links to the Fruit Machine Arcade.
+
+Between games, pick 1 to 4 players with the buttons on the table (or keys 1 to 4; a tap or Space starts a
+one-player game). Players take turns, three balls each. The best five scores on each table are kept on the
+device: a score that makes the list asks for a three-letter name, and the list shows after each game and
+every so often while the table waits. The "< TABLES" button (or Esc) goes back to the menu, and the ? button
+(or H) opens the rules.
 
 | Action | Touch | Keyboard |
 | --- | --- | --- |
-| Start | Tap | Space |
+| Start | Tap (or a 1 to 4 players button) | Space (or 1 to 4 for players) |
 | Flippers | Hold the left or right half of the screen | Z and / (or Shift, or Ctrl) |
 | Launch | Hold anywhere and pull down, then let go (longer or further is stronger) | Hold Space (or Down), release |
 | Nudge | Quick swipe up (up and sideways for a side nudge) | Arrow keys |
@@ -38,6 +47,9 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
   - `shell.js`: canvas, scaling, scrolling camera, touch and keyboard, pause, tuning panel
   - `render.js`: draws walls and rails from the collision shapes, plus flippers, bumpers, lamps and balls
   - `dmd.js`: the dot-matrix score strip; `font.js`: the 5x7 pixel font
+  - `help.js`: the instructions screen; `screens.js`: player buttons, high score table and name entry;
+    `scores.js`: the high score lists (kept in the browser, per table)
+  - `lobby.js` and `lobby.html`: the table menu
   - `sound.js`: the sound board (synthesised placeholders, each replaceable by an audio file) and the chiptune music player
   - `art.js`: loads a table's inlined images
 - `tables/<id>/`: one folder per table (`config.js` holds layout, parts and rules; `main.js` starts it).
@@ -47,12 +59,14 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
   `scenes.js` (dot-matrix animations) and `music.js` (the theme tune)
 - `art/gen.py`: makes an image with Pixellab (needs `PIXELLAB_API_KEY`); every prompt and seed is logged in
   `art/prompts/log.jsonl`. `art/compose_funfair.py` joins the Fun Fair backdrop panels and crops the sprites.
-- `tables/index.js`: the list of tables
+- `tables/index.js`: the list of tables, in menu order. [ADDING-A-TABLE.md](ADDING-A-TABLE.md) explains how to make a new one.
+- `previews.cjs`: takes each table's picture for the menu (`tables/<id>/preview.png`)
 - `test/`: headless physics and gameplay tests
 
 ## Commands (Node 18 or newer)
 
-- `npm install`, then `npm run build`: builds `dist/`
+- `npm install`, then `npm run build`: builds `dist/` (the menu, a page per table, and artifact pages)
+- `node previews.cjs`, then build again: updates the table pictures in the menu
 - `npm test`: physics, parts and rules tests, including long bot games that check no ball can escape or get stuck
 
 ## Parts
@@ -107,6 +121,6 @@ A table's look is three layers, so the art always matches where the ball goes:
 1. Feel test: physics, flippers, plunger, camera, touch controls on a grey table
 2. Engine parts: drop targets, spinners, ramps and wire rails on layers, saucers, locks, multiball, kickback, the rules system
 3. Fun Fair grey box: full layout and rules with placeholder drawing
-4. Fun Fair art (this): Pixellab artwork, dot-matrix scenes, music
-5. Finish: high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade
+4. Fun Fair art: Pixellab artwork, dot-matrix scenes, music
+5. Finish (this): high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade, ADDING-A-TABLE.md
 6. A second table
