@@ -6,8 +6,9 @@ import highnoon from './highnoon/config.js';
 import cupfinal from './cupfinal/config.js';
 import starsiege from './starsiege/config.js';
 import holeinone from './holeinone/config.js';
+import fergus from './fergus/config.js';
 import parts from './parts/config.js';
 import test from './test/config.js';
 
-export const tables = [funfair, raceday, highnoon, cupfinal, starsiege, holeinone, parts, test];
+export const tables = [funfair, raceday, highnoon, cupfinal, starsiege, holeinone, fergus, parts, test];
 export const tableIds = tables.map(t => t.id);
