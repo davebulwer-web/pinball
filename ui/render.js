@@ -169,6 +169,55 @@ function disc(ctx, cx, cy, R, fill, edge) {
   }
 }
 
+// A flipper drawn as a six-shooter (flipper style: 'pistol'): the barrel is the bat, the cylinder and frame sit
+// over the pivot, and the wooden grip hangs below. Drawn pixel by pixel in the flipper's own frame, so it
+// turns with the bat. A flash at the muzzle and a puff of smoke follow each press.
+const STEEL = ['#111217', '#3c414e', '#6e778a', '#bcc4d4'], WOOD = ['#2a1206', '#7a3a16', '#b0682e', '#e0a060'];
+function pistolPart(u, v, L) {
+  // returns [palette, shade] or null
+  if (u >= 12 && u <= L + 1 && v >= -3 && v <= 2) return [STEEL, u > L - 1 ? 1 : v < -1.5 ? 3 : v < 0.8 ? 2 : 1];        // barrel
+  if (u >= L - 4 && u <= L - 1 && v >= -5 && v < -3) return [STEEL, 1];                                            // front sight
+  if (u >= 12 && u <= 26 && v > 2 && v <= 4) return [STEEL, 1];                                                    // ejector rod
+  const cu = (u - 4.5) / 8.5, cv = v / 6.8;
+  if (cu * cu * cu * cu + cv * cv <= 1) {                                                                          // cylinder, with its chambers
+    const hole = Math.hypot(u - 4.5, v - 2.6) < 1.4 || Math.hypot(u - 4.5, v + 2.6) < 1.4;
+    return [STEEL, hole ? 0 : Math.abs(v) < 0.6 ? 1 : v < -4 ? 3 : 2];
+  }
+  if (u >= -9 && u < -3 && v >= -5 && v <= 4) return [STEEL, v < -3 ? 3 : 2];                                         // frame
+  if (u >= -12 && u < -7 && v >= -8 && v < -4.5) return [STEEL, 1];                                                // hammer
+  const gu = u + (v - 3) * 0.5;
+  if (v > 3 && v <= 17 && gu >= -12 && gu <= -2 && Math.hypot(Math.max(0, v - 14), gu + 7) <= 5.5) {                 // grip, rounded at the butt
+    return [WOOD, gu < -10.5 ? 1 : (Math.round(v) % 3 === 0 && gu > -9 && gu < -4) ? 1 : gu > -4 ? 3 : 2];
+  }
+  const dg = Math.hypot(u - 2.5, v - 7);
+  if (v > 4.5 && dg >= 2.6 && dg <= 3.8) return [STEEL, 2];                                                        // trigger guard
+  if (u >= 1.5 && u <= 2.8 && v > 5 && v <= 8.5) return [STEEL, 3];                                                // trigger
+  return null;
+}
+function drawPistol(ctx, f, t, flashAt) {
+  const L = f.len, ca = Math.cos(f.angle), sa = Math.sin(f.angle);
+  const [nx, ny] = f.side === 'left' ? [-sa, ca] : [sa, -ca];   // "down" across the gun, toward the bottom of the table
+  const R = L + 22, x0 = Math.floor(f.px - R), y0 = Math.floor(f.py - R);
+  const part = (i, j) => { const dx = i + 0.5 - f.px, dy = j + 0.5 - f.py; return pistolPart(dx * ca + dy * sa, dx * nx + dy * ny, L); };
+  for (let j = y0; j <= y0 + 2 * R; j++) for (let i = x0; i <= x0 + 2 * R; i++) {
+    const p = part(i, j); if (!p) continue;
+    const edge = !part(i - 1, j) || !part(i + 1, j) || !part(i, j - 1) || !part(i, j + 1);
+    ctx.fillStyle = edge ? p[0][0] : p[0][p[1]];
+    ctx.fillRect(i, j, 1, 1);
+  }
+  const since = t - (flashAt ?? -9);
+  const mx = f.px + ca * (L + 3), my = f.py + sa * (L + 3);
+  if (since < 0.07) {   // muzzle flash
+    disc(ctx, mx + ca * 3, my + sa * 3, 4.5, '#ffb020', null);
+    disc(ctx, mx + ca * 2, my + sa * 2, 2.5, '#fff8d0', null);
+    for (const k of [-0.6, 0.6]) { const c2 = Math.cos(f.angle + k), s2 = Math.sin(f.angle + k); ctx.fillStyle = '#ffd040'; ctx.fillRect(Math.round(mx + c2 * 8), Math.round(my + s2 * 8), 2, 2); }
+  } else if (since < 0.6) {   // smoke, drifting up and fading
+    ctx.globalAlpha = 0.5 * (1 - since / 0.6);
+    disc(ctx, mx + ca * 6, my + sa * 6 - since * 30, 2 + since * 6, '#c8c8c8', null);
+    ctx.globalAlpha = 1;
+  }
+}
+
 function drawFlipper(ctx, f) {
   const [tx, ty] = f.tip();
   const x0 = Math.floor(Math.min(f.px, tx) - f.r1 - 1), x1 = Math.ceil(Math.max(f.px, tx) + f.r1 + 1);
@@ -250,7 +299,8 @@ export function drawDynamic(ctx, game, sprites, t) {
   }
   // toys: pictures that move with the game (a race, a moving target)
   for (const toy of cfg.toys ?? []) {
-    const at = toy.at(game, t), im = sprites.art?.[typeof toy.art === 'function' ? toy.art(game, t) : toy.art];
+    const at = toy.at?.(game, t), im = sprites.art?.[typeof toy.art === 'function' ? toy.art(game, t) : toy.art];
+    if (toy.draw) { toy.draw(ctx, game, t, sprites.art ?? {}); continue; }   // a toy that draws itself
     if (!at) continue;
     if (im) ctx.drawImage(im, Math.round(at[0] - im.width / 2), Math.round(at[1] - im.height / 2));
     else disc(ctx, at[0], at[1], 4, toy.colour ?? col.lamp, '#000');
@@ -285,7 +335,8 @@ export function drawDynamic(ctx, game, sprites, t) {
     ctx.fillStyle = '#8a8f9a'; ctx.fillRect(x0 + w / 2 - 1, y + 2, 2, 12);
   }
   // standup targets
-  for (const tg of cfg.targets ?? []) {
+  for (const tg0 of cfg.targets ?? []) {
+    const tg = tg0.move ? { ...tg0, ...(([a, b]) => ({ a, b }))(game.targetAt(tg0.id)) } : tg0;   // a moving target, where it is now
     const lit = game.lamps[tg.id], fl = t - (game.flashes[tg.id] ?? -9) < 0.12;
     const im = sprites.art?.[tg.art];
     if (im) ctx.drawImage(im, Math.round((tg.a[0] + tg.b[0]) / 2 - im.width / 2 + (tg.artOffset?.[0] ?? 0)), Math.round((tg.a[1] + tg.b[1]) / 2 - im.height + (tg.artOffset?.[1] ?? 0) + (fl ? -1 : 0)));
@@ -328,7 +379,7 @@ export function drawDynamic(ctx, game, sprites, t) {
     ctx.fillStyle = '#c8ccd6';
     for (let k = y + 5; k < y + 40; k += 3) ctx.fillRect(x0 + 2, k, w - 4, 1);
   }
-  for (const f of game.flippers) drawFlipper(ctx, f);
+  for (const f of game.flippers) if (f.cfg.style === 'pistol') drawPistol(ctx, f, t, game.flashes[f.id]); else drawFlipper(ctx, f);
   for (const b of game.world.balls) if (!b.layer && !b.hidden) ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
   // ramps and wires over the playfield, then balls riding on them (with a shadow)
   if (sprites.overlay) ctx.drawImage(sprites.overlay, 0, 0);

@@ -8,6 +8,7 @@ built into single HTML pages that work offline.
 | --- | --- |
 | Fun Fair | Full layout and rules with Pixellab artwork, dot-matrix scenes and a theme tune (F-U-N lanes and skill shot, dodgems, Big Wheel ramp, Rollercoaster rail, Hook a Duck, Big Top multiball, Coconut Shy, Ghost Train) |
 | Race Day | Full layout and rules with Pixellab artwork, dot-matrix scenes and a theme tune (B-E-T lanes and skill shot, an upper flipper, the Stables scoop with a subway, pick-your-horse races on a race track toy, the Home Straight ramp, the Fences and a Jump Off hurry-up, the Bookie's Tip mystery award, the Paddock diverter and bumpers, the Lucky Horseshoe up-post, Grand National multiball with add-a-ball and a super jackpot) |
+| High Noon | Wild West table with a tall 160 x 32 dot matrix, Pixellab artwork and a cowboy theme tune. Six-shooters for flippers that really fire in the Quick Draw (outlaws pop up across the bottom of the table), a Stagecoach moving target, the Bank captive ball, the Jail scoop and Jailbreak multiball, the Railroad wire ramp, the Saloon scoop, WANTED drop targets, Gold Rush, and a kickback |
 | Parts Test | Grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
 | Feel Test | Grey test table for tuning the ball, flippers, plunger and camera |
 
@@ -59,7 +60,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 - `tables/funfair/`: also `art.js` (images to inline), `art/` (built images, with the Pixellab sources in `art/src/`),
   `scenes.js` (dot-matrix animations) and `music.js` (the theme tune)
 - `art/gen.py`: makes an image with Pixellab (needs `PIXELLAB_API_KEY`); every prompt and seed is logged in
-  `art/prompts/log.jsonl`. `art/compose_funfair.py` and `art/compose_raceday.py` join each table's backdrop panels and crop the sprites.
+  `art/prompts/log.jsonl`. `art/compose_funfair.py`, `art/compose_raceday.py` and `art/compose_highnoon.py` join each table's backdrop panels and crop the sprites.
 - `tables/index.js`: the list of tables, in menu order. [ADDING-A-TABLE.md](ADDING-A-TABLE.md) explains how to make a new one.
 - `previews.cjs`: takes each table's picture for the menu (`tables/<id>/preview.png`)
 - `test/`: headless physics and gameplay tests
@@ -78,7 +79,8 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 | Plunger | `plunger` | Launches the ball; pull length sets the power |
 | Pop bumper | `bumpers` | Kicks the ball away |
 | Slingshot | `slings` | Kicks sideways on a firm hit |
-| Standup target | `targets` | Scores when hit |
+| Standup target | `targets` | Scores when hit. With `move` it slides to and fro (High Noon's Stagecoach) |
+| Captive ball | `captives` | A ball that stays in its channel (walls with `captiveOnly`); hit it to knock it into a target |
 | Drop target bank | `dropBanks` | Targets drop when hit; `bankDown` when all are down; resets after a delay |
 | Rollover lane | `lanes` | Scores when rolled over |
 | Spinner | `spinners` | Spins by the ball's speed, scores per turn |
@@ -87,7 +89,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 | Ramp or wire rail | `ramps` | Raised path on its own layer; slow balls are turned back at the mouth |
 | One-way gate | `gates` | Solid from one side only |
 | Diverter or up-post | `walls` or `posts` with an `id` | Raised and lowered by the rules; waits for a ball to move clear before it rises |
-| Toy | `toys` | A picture the game state moves, such as Race Day's horses |
+| Toy | `toys` | A picture the game state moves, such as Race Day's horses, or a `draw` function (High Noon's Quick Draw) |
 | Lamp | `inserts` | A lamp painted on the playfield, lit by the rules |
 
 ## Rules
@@ -105,6 +107,8 @@ Triggers, conditions, actions, lamp groups and timed modes are listed at the top
 Race Day adds hurry-ups (a mode with a falling value, scored by `collect`), mystery awards (`mystery`),
 picking with the flippers while a saucer holds the ball (`hold` and a rotating lamp group), raising posts
 (`post`) and add-a-ball (`addBall`).
+High Noon's Quick Draw is written as functions in its config: the `flip:left` and `flip:right` triggers fire
+the pistols, `game.lookAt` points the camera at the bottom of the table, and `releaseSaucer` lets the ball go.
 A drain pays the bonus times the multiplier; an extra ball gives a shoot again.
 
 ## Replacing sounds
@@ -129,4 +133,5 @@ A table's look is three layers, so the art always matches where the ball goes:
 3. Fun Fair grey box: full layout and rules with placeholder drawing
 4. Fun Fair art: Pixellab artwork, dot-matrix scenes, music
 5. Finish: high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade, ADDING-A-TABLE.md
-6. A second table (this): Race Day, with the parts and rules Fun Fair doesn't use
+6. A second table: Race Day, with the parts and rules Fun Fair doesn't use
+7. A third table (this): High Noon, with pistol flippers, a moving target, a captive ball and a tall dot matrix

@@ -12,7 +12,8 @@
 //   { kind: 'flipper', ... }                         see parts/flipper.js
 // Shared shape fields: bounce (0..1), friction (0..1), layer (default 0), id, tag,
 //   kick (speed a bumper or sling adds), kickMin (impact speed needed to fire), oneWay ([nx, ny]: only
-//   collides with a ball on that side), sensor (no collision, reports enter), vel ([vx, vy] surface speed).
+//   collides with a ball on that side), sensor (no collision, reports enter), vel ([vx, vy] surface speed),
+//   captiveOnly (only stops a captive ball, one with b.captive set: the walls that keep it in its channel).
 
 export const STEP = 1 / 480;            // fixed physics step (seconds)
 const MAX_SPEED = 2600;                 // px/s, a safety cap
@@ -117,7 +118,7 @@ export class World {
   }
 
   collide(b, s) {
-    if (s.layer !== b.layer || s.disabled) return;
+    if (s.layer !== b.layer || s.disabled || (s.captiveOnly && !b.captive)) return;
     if (s.box && (b.x + b.r < s.box[0] || b.x - b.r > s.box[2] || b.y + b.r < s.box[1] || b.y - b.r > s.box[3])) {
       if (s.sensor) b.touching.delete(s);
       return;
