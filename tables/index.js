@@ -3,8 +3,9 @@
 import funfair from './funfair/config.js';
 import raceday from './raceday/config.js';
 import highnoon from './highnoon/config.js';
+import cupfinal from './cupfinal/config.js';
 import parts from './parts/config.js';
 import test from './test/config.js';
 
-export const tables = [funfair, raceday, highnoon, parts, test];
+export const tables = [funfair, raceday, highnoon, cupfinal, parts, test];
 export const tableIds = tables.map(t => t.id);

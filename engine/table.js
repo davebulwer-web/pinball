@@ -17,6 +17,8 @@
 //   targets:  [{ id, a, b, score }]                             standups: solid, score when hit
 //               move: { by: [dx, dy], secs } makes a moving target: it slides to and fro by up to `by`
 //               either side, once every `secs` (game.targetAt(id) is where it is now)
+//               move: { follow: true, reach, speed, sight, secs } makes a goalkeeper: it slides across to get in
+//               front of a ball coming at it from below (within `sight` pixels), and paces about otherwise
 //   captives: [{ id, c }]                                       a captive ball: a ball that stays on the table,
 //               kept in its channel by walls with captiveOnly: true (which a ball in play passes through)
 //   dropBanks:[{ id, targets: [[a, b], ...], score, resetDelay }]  drop when hit; bankDown when all are down;
@@ -37,6 +39,9 @@
 //   rules, lampGroups, modes: see engine/rules.js. `script(game)` may return extra hooks for odd tables
 //               ({ start, tick, or a trigger type such as ramp }). game.lookAt = y asks the screen to show that
 //               part of the table (High Noon's Quick Draw), null to follow the ball again.
+//               game.video = { draw(api, t) } takes over the dot matrix for a game played on it (Cup Final's
+//               penalty shootout); the rules read the flipper buttons with flip:left and flip:right.
+//   status(game) => 'TEXT' | null   a line the dot matrix shows under the score (a match score, say)
 
 import { World, Ball, STEP } from './physics.js';
 import { Flipper } from './parts/flipper.js';
@@ -136,11 +141,29 @@ export class Game {
   moveTargets() {
     const t = this.world.time;
     for (const s of this.moving) {
-      const m = s.part.move, w = (2 * Math.PI) / (m.secs ?? 4), k = Math.sin(t * w), dk = Math.cos(t * w) * w;
+      const m = s.part.move;
+      if (m.follow) { this.follow(s, m); continue; }
+      const w = (2 * Math.PI) / (m.secs ?? 4), k = Math.sin(t * w), dk = Math.cos(t * w) * w;
       s.a[0] = s.part.a[0] + m.by[0] * k; s.a[1] = s.part.a[1] + m.by[1] * k;
       s.b[0] = s.part.b[0] + m.by[0] * k; s.b[1] = s.part.b[1] + m.by[1] * k;
       s.vel[0] = m.by[0] * dk; s.vel[1] = m.by[1] * dk;
     }
+  }
+  // a goalkeeper: slides across (up to `reach` either side, at most `speed` px/s) to get in line with the
+  // nearest ball coming at it from below, and paces to and fro along his line (once every `secs`) when there is none
+  follow(s, m) {
+    const cx = (s.part.a[0] + s.part.b[0]) / 2, y = (s.part.a[1] + s.part.b[1]) / 2;
+    let best = null;
+    for (const b of this.world.balls) if (this.inPlay(b) && !b.held && b.layer === 0 && b.y > y && b.y - y < (m.sight ?? 260) && (!best || b.y < best.y)) best = b;
+    const idle = m.reach * Math.sin(this.world.time * 2 * Math.PI / (m.secs ?? 3));   // pacing his line
+    const want = best ? Math.max(-m.reach, Math.min(m.reach, best.x - cx)) : idle;
+    s.off ??= 0;
+    const max = m.speed * STEP;
+    const d = Math.max(-max, Math.min(max, want - s.off));
+    s.off += d;
+    s.a[0] = s.part.a[0] + s.off; s.b[0] = s.part.b[0] + s.off;
+    s.a[1] = s.part.a[1]; s.b[1] = s.part.b[1];
+    s.vel[0] = d / STEP; s.vel[1] = 0;
   }
   // where a target is now: [a, b]
   targetAt(id) {

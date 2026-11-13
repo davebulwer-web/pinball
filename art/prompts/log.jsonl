@@ -60,3 +60,25 @@
 {"file": "tables/highnoon/art/src/lamp-bag.png", "size": [32, 32], "description": "tan money bag tied with string with a dollar sign on it, simple icon", "seed": 429, "bg": false, "view": null}
 {"file": "tables/highnoon/art/src/lamp-coach.png", "size": [32, 32], "description": "small red wild west stagecoach with yellow wheels, side view, simple icon", "seed": 433, "bg": false, "view": null}
 {"file": "tables/highnoon/art/src/lamp-safe.png", "size": [32, 32], "description": "small black iron bank safe with a gold dial, simple icon", "seed": 432, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/pitch.png", "size": [320, 240], "description": "top-down view of the middle of a football pitch, bright green grass with light and dark mowing stripes, white centre circle and halfway line, 16-bit pixel art", "seed": 502, "bg": true, "view": null}
+{"file": "tables/cupfinal/art/src/box.png", "size": [320, 220], "description": "top-down view of a football pitch penalty area, green striped grass, white penalty box lines and penalty spot, a corner flag, 16-bit pixel art", "seed": 503, "bg": true, "view": null}
+{"file": "tables/cupfinal/art/src/stands.png", "size": [320, 200], "description": "top-down view of a packed football stadium stand at night under floodlights, crowds of fans waving red and white scarves and flags, a green pitch edge with advertising boards along the bottom, 16-bit pixel art", "seed": 501, "bg": true, "view": null}
+{"file": "tables/cupfinal/art/src/defender.png", "size": [32, 32], "description": "football player in a blue kit standing in a defensive wall with hands crossed, facing forward, full body, simple sprite", "seed": 512, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/keeper.png", "size": [32, 32], "description": "football goalkeeper seen from directly above, arms spread wide, green jersey and big gloves, simple sprite", "seed": 510, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/ball.png", "size": [32, 32], "description": "classic black and white football seen from directly above, simple sprite", "seed": 511, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-yellow.png", "size": [32, 32], "description": "yellow referee card held up, simple icon", "seed": 522, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-whistle.png", "size": [32, 32], "description": "silver referee whistle on a cord, simple icon", "seed": 521, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-boot.png", "size": [32, 32], "description": "black football boot with white studs, simple icon", "seed": 520, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-flag.png", "size": [32, 32], "description": "red and yellow corner flag on a pole, simple icon", "seed": 524, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-cup.png", "size": [32, 32], "description": "shiny silver football cup trophy with two big handles, simple icon", "seed": 525, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-red.png", "size": [32, 32], "description": "red referee card held up, simple icon", "seed": 523, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-medal.png", "size": [32, 32], "description": "gold winners medal on a red ribbon, simple icon", "seed": 526, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-scarf.png", "size": [32, 32], "description": "red and white striped football scarf, simple icon", "seed": 527, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-glove.png", "size": [32, 32], "description": "green goalkeeper glove, simple icon", "seed": 528, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-ball.png", "size": [32, 32], "description": "black and white football, simple icon", "seed": 530, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-shirt.png", "size": [32, 32], "description": "red football shirt with a white number 9, simple icon", "seed": 529, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-xball.png", "size": [32, 32], "description": "glossy silver metal sphere with a bright white highlight and a small gold plus sign beside it, simple icon", "seed": 531, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-net.png", "size": [32, 32], "description": "white football goal with a net, front view, simple icon", "seed": 532, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-star.png", "size": [32, 32], "description": "gold star, simple icon", "seed": 533, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/ball.png", "size": [32, 32], "description": "white association football soccer ball with black pentagon patches seen from directly above, round, simple sprite", "seed": 541, "bg": false, "view": null}
+{"file": "tables/cupfinal/art/src/lamp-ball.png", "size": [32, 32], "description": "white soccer ball with black pentagon patches, round, simple icon", "seed": 542, "bg": false, "view": null}

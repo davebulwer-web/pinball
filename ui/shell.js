@@ -310,6 +310,8 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
       entry: entry && { player: entry.player, players: entry.players, name: entry.name.map(i => LETTERS[i]).join(''), slot: entry.slot },
       player: game.player?.n ?? 1, ball: game.player?.ball ?? 1, score: game.player?.score ?? 0,
       mode: Object.values(game.modes).map(m => `${Math.ceil(m.left)}`)[0],
+      status: game.state === 'play' || game.state === 'ready' ? cfg.status?.(game) : null,
+      video: game.video && game.state !== 'over' ? api => game.video.draw(api, game.world.time) : null,
     }));
     dmd.paint(ctx, 0, 0);
     const view = { W, top: DMD_ROWS, h: viewH, touch: isTouch(), t: now };

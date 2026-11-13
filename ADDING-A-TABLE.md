@@ -55,6 +55,8 @@ by the game (its horses are `toys`), add-a-ball and a super jackpot.
 `tables/highnoon/config.js` has a shootout written as functions: the flipper buttons fire pistols at figures
 drawn by a `toys` entry with a `draw` function, while a saucer holds the ball and `game.lookAt` shows the
 bottom of the table. It also has a moving target (`move` on a target) and a captive ball (`captives`).
+`tables/cupfinal/config.js` has a goalkeeper (`move: { follow: true }`), a timed match shown on the dot
+matrix with `status`, and two games played on the dot matrix (`game.video`) with the flipper buttons.
 
 ## 4. Instructions
 
