@@ -100,7 +100,9 @@ with `loadArt()` before starting the table. A table with no art needs no `art.js
 ## 6. Display, sound and music
 
 - `scenes`: dot-matrix animations for messages (see `tables/funfair/scenes.js`). A rule's
-  `['message', 'TEXT', 'SUB', 'sceneName']` plays one.
+  `['message', 'TEXT', 'SUB', 'sceneName']` plays one. Message lines fit themselves: up to 26 letters in the
+  normal font, up to 40 in a small one, and longer lines scroll (a single line too long is split over two).
+  Keep lines short anyway, as the big letters read best.
 - `dmd: { rows: 32 }`: a dot matrix twice as tall (160 x 32 dots), for more detailed scenes and bigger
   letters. It takes 32 more pixels from the top of the screen. See `tables/highnoon/scenes.js`.
 - Flippers with `style: 'pistol'` are drawn as six-shooters with a muzzle flash; `flipSound: 'cap'` gives
