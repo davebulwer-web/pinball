@@ -19,7 +19,7 @@
 // Actions (each an array, or a function (game) => {} for anything unusual):
 //   ['score', n]  ['bonus', n]  ['bonusX', 1]  ['jackpot', n]
 //   ['lamp', 'id' | [...], 0 | 1 | 2]           2 = blinking
-//   ['message', 'TEXT', 'second line']  ['sound', 'name']
+//   ['message', 'TEXT', 'second line', scene?]  ['sound', 'name']   scene: a dot-matrix animation from config.scenes
 //   ['count', 'name', n]  ['setCount', 'name', n]
 //   ['resetBank', 'id']  ['dropBank', 'id']  ['lock']  ['multiball', balls]  ['extraBall']  ['ballSave', secs]
 //   ['mode', 'id']  ['endMode', 'id']          modes come from config.modes
@@ -87,7 +87,7 @@ export class Rules {
         case 'bonusX': if (p.bonusX < (g.cfg.maxBonusX ?? 5)) { p.bonusX = Math.min(g.cfg.maxBonusX ?? 5, p.bonusX + x); g.emit('bonusX', { x: p.bonusX }); } break;
         case 'jackpot': g.addScore(x); g.emit('jackpot', { score: x }); break;
         case 'lamp': for (const id of asList(x)) g.lamps[id] = y; this.checkGroups(); break;
-        case 'message': g.emit('message', { text: x, sub: y }); break;
+        case 'message': g.emit('message', { text: x, sub: y, scene: a[3] }); break;
         case 'sound': g.emit('sound', { name: x }); break;
         case 'count': p.counts[x] = (p.counts[x] ?? 0) + (y ?? 1); break;
         case 'setCount': p.counts[x] = y; break;

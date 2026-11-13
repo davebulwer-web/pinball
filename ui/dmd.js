@@ -1,5 +1,7 @@
 // The dot-matrix score strip across the top of the screen: 160 x 16 dots, two screen pixels per dot.
 // It shows the score, player and ball, and plays messages over them (`show`), which time out.
+// A message can be an animated scene: show(lines, { scene }) where scene(api, p, lines, t) draws one frame
+// with api = { set(x, y, v), text(s, x, y, { sc, align, v, clip: [x0, x1] }), W, H } and p running 0..1 over the message.
 
 import { glyph, commas } from './font.js';
 
@@ -14,21 +16,23 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
   const clear = () => dots.fill(0);
   const set = (x, y, v = 2) => { if (x >= 0 && x < DMD_W && y >= 0 && y < DMD_H) dots[y * DMD_W + x] = Math.max(dots[y * DMD_W + x], v); };
   const width = (s, sc = 1) => (String(s).length * 6 - 1) * sc;
-  function text(s, x, y, { sc = 1, align = 'left', v = 2 } = {}) {
+  function text(s, x, y, { sc = 1, align = 'left', v = 2, clip = null } = {}) {
     s = String(s);
     let cx = align === 'center' ? Math.round(x - width(s, sc) / 2) : align === 'right' ? x - width(s, sc) : x;
     for (const ch of s) {
       const rows = glyph(ch);
       for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++)
-        if (rows[r] & (0x10 >> c)) for (let i = 0; i < sc; i++) for (let j = 0; j < sc; j++) set(cx + c * sc + i, y + r * sc + j, v);
+        if (rows[r] & (0x10 >> c)) for (let i = 0; i < sc; i++) for (let j = 0; j < sc; j++) { const px = cx + c * sc + i; if (!clip || (px >= clip[0] && px < clip[1])) set(px, y + r * sc + j, v); }
       cx += 6 * sc;
     }
   }
 
+  const api = { set, text, W: DMD_W, H: DMD_H };
+
   // queue a message. lines: one or two strings; big: one line at double size
-  function show(lines, { secs = 2, big = false, blink = false, now: t } = {}) {
+  function show(lines, { secs = 2, big = false, blink = false, scene = null } = {}) {
     if (!Array.isArray(lines)) lines = [lines];
-    queue.push({ lines, big, blink, secs, start: null });
+    queue.push({ lines, big, blink, secs, scene, start: null });
     if (queue.length > 4) queue.splice(0, queue.length - 4);
   }
   const busy = () => queue.length > 0;
@@ -39,6 +43,7 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
     let m = queue[0];
     if (m && m.start === null) m.start = t;
     if (m && t - m.start > m.secs) { queue.shift(); m = queue[0]; if (m) m.start = t; }
+    if (m?.scene) { m.scene(api, Math.min(1, (t - m.start) / m.secs), m.lines, t - m.start); return; }
     if (m) {
       const visible = !m.blink || Math.floor((t - m.start) * 6) % 2 === 0;
       if (visible) {

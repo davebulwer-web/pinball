@@ -6,7 +6,7 @@ built into single HTML pages that work offline.
 
 | Table | Status |
 | --- | --- |
-| Fun Fair | Grey box: full layout and rules (F-U-N lanes and skill shot, dodgems, Big Wheel ramp, Rollercoaster rail, Hook a Duck, Big Top multiball, Coconut Shy, Ghost Train), placeholder drawing |
+| Fun Fair | Full layout and rules with Pixellab artwork, dot-matrix scenes and a theme tune (F-U-N lanes and skill shot, dodgems, Big Wheel ramp, Rollercoaster rail, Hook a Duck, Big Top multiball, Coconut Shy, Ghost Train) |
 | Parts Test | Grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
 | Feel Test | Grey test table for tuning the ball, flippers, plunger and camera |
 
@@ -38,10 +38,15 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
   - `shell.js`: canvas, scaling, scrolling camera, touch and keyboard, pause, tuning panel
   - `render.js`: draws walls and rails from the collision shapes, plus flippers, bumpers, lamps and balls
   - `dmd.js`: the dot-matrix score strip; `font.js`: the 5x7 pixel font
-  - `sound.js`: the sound board (synthesised placeholders, each replaceable by an audio file)
+  - `sound.js`: the sound board (synthesised placeholders, each replaceable by an audio file) and the chiptune music player
+  - `art.js`: loads a table's inlined images
 - `tables/<id>/`: one folder per table (`config.js` holds layout, parts and rules; `main.js` starts it).
   `tables/parts/config.js` is the reference: it uses every part and most rule features, and the header of
   `engine/table.js` lists every part's settings.
+- `tables/funfair/`: also `art.js` (images to inline), `art/` (built images, with the Pixellab sources in `art/src/`),
+  `scenes.js` (dot-matrix animations) and `music.js` (the theme tune)
+- `art/gen.py`: makes an image with Pixellab (needs `PIXELLAB_API_KEY`); every prompt and seed is logged in
+  `art/prompts/log.jsonl`. `art/compose_funfair.py` joins the Fun Fair backdrop panels and crops the sprites.
 - `tables/index.js`: the list of tables
 - `test/`: headless physics and gameplay tests
 
@@ -86,13 +91,22 @@ A drain pays the bonus times the multiplier; an extra ball gives a shoot again.
 
 Each sound has a name (the full list is at the top of `ui/sound.js`), such as flipper, bumper, sling,
 drop, spin, ramp, multiball and jackpot. A table can swap any of them for an audio file with `sounds: { bumper: 'url or data URI' }`
-in its config.
+in its config. Music works the same way: a table's `music` is a chiptune song written as notes (see
+`tables/funfair/music.js`), and `sounds: { music: 'url' }` swaps it for a looping recording.
+
+## Artwork
+
+A table's look is three layers, so the art always matches where the ball goes:
+1. a backdrop picture (`playfield` in the table's `art.js`), from Pixellab panels joined and dimmed by a compose script
+2. rails, ramps, walls and slingshots, drawn by the engine from the collision shapes in the table's `colours`
+3. sprites for parts: a bumper, drop bank or target with `art: 'name'` draws that image, `decals` place
+   still pictures, and `bulbs` puts chasing lights along paths
 
 ## Plan
 
 1. Feel test: physics, flippers, plunger, camera, touch controls on a grey table
 2. Engine parts: drop targets, spinners, ramps and wire rails on layers, saucers, locks, multiball, kickback, the rules system
-3. Fun Fair grey box (this): full layout and rules with placeholder drawing
-4. Fun Fair art: Pixellab artwork, dot-matrix scenes, music
+3. Fun Fair grey box: full layout and rules with placeholder drawing
+4. Fun Fair art (this): Pixellab artwork, dot-matrix scenes, music
 5. Finish: high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade
 6. A second table

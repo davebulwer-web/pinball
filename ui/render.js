@@ -2,7 +2,7 @@
 // once from the same shapes the physics uses, so what you see is exactly where the ball goes. Moving
 // and lit parts (flippers, plunger, bumpers, lamps, balls) are drawn every frame.
 
-import { drawText } from './font.js';
+import { drawText, glyph } from './font.js';
 import { offsetPath } from '../engine/geom.js';
 
 const D = Math.PI / 180;
@@ -54,21 +54,27 @@ const canvasOf = (w, h) => {
 };
 
 // The fixed playfield picture.
-export function buildPlayfield(cfg) {
+// `art` holds the table's decoded images (ui/art.js): a `playfield` backdrop, and any sprites named by parts
+// (bumper `art`, drop bank `art`, target `art`) or by `decals: [{ art, c }]` in the config.
+export function buildPlayfield(cfg, art = {}) {
   const [W, H] = cfg.size;
   const col = cfg.colours;
   const [cv, ctx] = canvasOf(W, H);
-  // backdrop: plain field with a faint 16px dot grid so scrolling reads clearly
-  ctx.fillStyle = col.field; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  for (let y = 8; y < H; y += 16) for (let x = 8; x < W; x += 16) ctx.fillRect(x, y, 1, 1);
+  if (art.playfield) ctx.drawImage(art.playfield, 0, 0);
+  else {
+    // plain field with a faint 16px dot grid so scrolling reads clearly
+    ctx.fillStyle = col.field; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    for (let y = 8; y < H; y += 16) for (let x = 8; x < W; x += 16) ctx.fillRect(x, y, 1, 1);
+  }
+  for (const d of cfg.decals ?? []) { const im = art[d.art]; if (im) ctx.drawImage(im, Math.round(d.c[0] - im.width / 2), Math.round(d.c[1] - im.height / 2)); }
   ctx.fillStyle = '#0c0f18'; ctx.fillRect(cfg.lane.x0, cfg.lane.yTop, cfg.lane.x1 - cfg.lane.x0, H - cfg.lane.yTop);
-  drawText(ctx, cfg.name.toUpperCase(), W / 2 - 6, cfg.nameY ?? 470, 'rgba(255,255,255,0.10)', { scale: 2, align: 'center' });
+  drawText(ctx, cfg.name.toUpperCase(), W / 2 - 6, cfg.nameY ?? 470, col.name ?? 'rgba(255,255,255,0.10)', { scale: 2, align: 'center' });
 
   // slingshot plastics
   const sl = mask(W, H);
   for (const s of cfg.slings ?? []) sl.tri(...s.points);
-  sl.paint(ctx, '#3a6fd8', '#1b2f66', '#7aa2ff');
+  sl.paint(ctx, col.sling ?? '#3a6fd8', col.slingDark ?? '#1b2f66', col.slingHi ?? '#7aa2ff');
   // walls and rails
   const wm = mask(W, H);
   for (const w of cfg.walls ?? []) {
@@ -80,7 +86,7 @@ export function buildPlayfield(cfg) {
   for (const g of cfg.gates ?? []) wm.line(g.a, g.b, 0.8);
   for (const r of cfg.ramps ?? []) for (const [a, b] of r.funnelWalls ?? []) wm.line(a, b, 1.5);
   for (const p of cfg.posts ?? []) wm.stamp(p.c[0], p.c[1], p.R + 0.5);
-  wm.paint(ctx, col.wall, col.wallDark, '#e4e8f2');
+  wm.paint(ctx, col.wall, col.wallDark, col.wallHi ?? '#e4e8f2');
   // rubber kicking faces of the slings
   const rb = mask(W, H);
   for (const s of cfg.slings ?? []) rb.line(s.points[0], s.points[2], 1.6);
@@ -180,13 +186,45 @@ function drawFlipper(ctx, f) {
   disc(ctx, f.px, f.py, 1.6, '#999', null);
 }
 
+// Light bulbs every `spacing` pixels along the config's `bulbs.paths` (worked out once per config).
+const bulbCache = new WeakMap();
+function bulbPoints(b) {
+  if (!bulbCache.has(b)) {
+    const pts = [], gap = b.spacing ?? 9;
+    for (const path of b.paths) {
+      let carry = 0;
+      for (let i = 0; i + 1 < path.length; i++) {
+        const [a, c] = [path[i], path[i + 1]], len = Math.hypot(c[0] - a[0], c[1] - a[1]);
+        for (let d = carry; d < len; d += gap) pts.push([Math.round(a[0] + (c[0] - a[0]) * d / len), Math.round(a[1] + (c[1] - a[1]) * d / len)]);
+        carry = (carry - len) % gap; if (carry < 0) carry += gap;
+      }
+    }
+    bulbCache.set(b, pts);
+  }
+  return bulbCache.get(b);
+}
+// Bulbs chase round slowly in play, quickly in attract mode, and all flash in multiball or a mode.
+function drawBulbs(ctx, game, t) {
+  const b = game.cfg.bulbs; if (!b) return;
+  const pts = bulbPoints(b), on = b.colour ?? '#ffd36a', off = b.dim ?? '#4a3410';
+  const party = game.liveBalls?.() > 1 || Object.keys(game.modes ?? {}).length > 0;
+  const step = Math.floor(t * (game.state === 'attract' || game.state === 'over' ? 14 : 5));
+  pts.forEach(([x, y], i) => {
+    const lit = party ? Math.floor(t * 6) % 2 === 0 : (i + step) % 4 !== 0;
+    ctx.fillStyle = lit ? on : off; ctx.fillRect(x - 1, y - 1, 2, 2);
+    if (lit) { ctx.fillStyle = '#fff6d8'; ctx.fillRect(x - 1, y - 1, 1, 1); }
+  });
+}
+
 // Everything that moves or lights, drawn on top of the playfield. `t` is game time in seconds.
 export function drawDynamic(ctx, game, sprites, t) {
   const cfg = game.cfg, col = cfg.colours;
+  drawBulbs(ctx, game, t);
   // top lane lamps
   for (const l of cfg.lanes ?? []) {
     const cx = (l.a[0] + l.b[0]) / 2, cy = l.a[1] + 14;
     const lit = game.lamps[l.id];
+    if (l.marquee) { if (l.label) marquee(ctx, l.label, cx, cy + 6, lit === 1 || (lit === 2 && Math.floor(t * 5) % 2 === 0)); continue; }
     disc(ctx, cx, cy, 5, lit ? col.lamp : '#3b3420', lit ? '#a07010' : '#22201a');
     if (l.label) drawText(ctx, l.label, cx - 2, cy - 3, lit ? '#3a2400' : '#6d6450');
   }
@@ -194,12 +232,21 @@ export function drawDynamic(ctx, game, sprites, t) {
   for (const ins of cfg.inserts ?? []) {
     const v = ins.lit ? ins.lit(game) : game.lamps[ins.id], on = v === 1 || (v === 2 && Math.floor(t * 5) % 2 === 0);
     const c = ins.colour ?? col.lamp;
+    const im = sprites.art?.[ins.art];
+    if (im) {   // a picture lamp: full colour with a soft glow when lit, dark when not
+      if (on) { ctx.globalAlpha = 0.35; disc(ctx, ins.c[0], ins.c[1], Math.max(im.width, im.height) / 2 + 2, c, null); ctx.globalAlpha = 1; }
+      ctx.drawImage(on ? im : darkened(im), Math.round(ins.c[0] - im.width / 2), Math.round(ins.c[1] - im.height / 2));
+      continue;
+    }
+    if (ins.marquee) { marquee(ctx, ins.label, ins.c[0], ins.c[1], on); continue; }
     disc(ctx, ins.c[0], ins.c[1], ins.r ?? 5, on ? c : shade(c, 0.28), on ? shade(c, 0.6) : '#15171c');
     if (ins.label) drawText(ctx, ins.label, ins.c[0] - 2, ins.c[1] - 3, on ? '#1a1206' : shade(c, 0.55));
   }
   // drop targets: up, or a dark slot when down
   for (const bank of cfg.dropBanks ?? []) bank.targets.forEach(([a, b], i) => {
     const s = game.banks?.[bank.id]?.shapes[i]; const down = s?.disabled;
+    const im = sprites.art?.[bank.art];
+    if (im && !down) ctx.drawImage(im, Math.round((a[0] + b[0]) / 2 - im.width / 2), Math.round((a[1] + b[1]) / 2 - im.height + 2));
     const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]));
     for (let k = 0; k <= n; k++) {
       const x = Math.floor(a[0] + (b[0] - a[0]) * k / n), y = Math.floor(a[1] + (b[1] - a[1]) * k / n);
@@ -227,6 +274,8 @@ export function drawDynamic(ctx, game, sprites, t) {
   // standup targets
   for (const tg of cfg.targets ?? []) {
     const lit = game.lamps[tg.id], fl = t - (game.flashes[tg.id] ?? -9) < 0.12;
+    const im = sprites.art?.[tg.art];
+    if (im) ctx.drawImage(im, Math.round((tg.a[0] + tg.b[0]) / 2 - im.width / 2 + (tg.artOffset?.[0] ?? 0)), Math.round((tg.a[1] + tg.b[1]) / 2 - im.height + (tg.artOffset?.[1] ?? 0) + (fl ? -1 : 0)));
     ctx.strokeStyle = 'transparent';
     const n = Math.ceil(Math.hypot(tg.b[0] - tg.a[0], tg.b[1] - tg.a[1]));
     for (let k = 0; k <= n; k++) {
@@ -238,6 +287,13 @@ export function drawDynamic(ctx, game, sprites, t) {
   // pop bumpers: flash and swell when they fire
   for (const b of cfg.bumpers ?? []) {
     const since = t - (game.flashes[b.id] ?? -9), fl = since < 0.1;
+    const im = sprites.art?.[b.art];
+    if (im) {
+      ctx.globalAlpha = 0.4; disc(ctx, b.c[0] + 1, b.c[1] + 2, b.R, '#000', null); ctx.globalAlpha = 1;
+      if (fl) disc(ctx, b.c[0], b.c[1], b.R + 2, '#fff3a0', '#ffcc33');
+      ctx.drawImage(im, Math.round(b.c[0] - im.width / 2), Math.round(b.c[1] - im.height / 2) - (fl ? 1 : 0));
+      continue;
+    }
     disc(ctx, b.c[0], b.c[1] + 1, b.R, '#2a2a33', null);
     disc(ctx, b.c[0], b.c[1], b.R + (fl ? 1 : 0), '#d8d8e0', '#555');
     disc(ctx, b.c[0], b.c[1], b.R - 3, fl ? '#fff3a0' : col.bumper, fl ? '#ffcc33' : '#6a1d1d');
@@ -266,6 +322,28 @@ export function drawDynamic(ctx, game, sprites, t) {
   for (const b of game.world.balls) if (b.layer) {
     ctx.globalAlpha = 0.35; disc(ctx, b.x + 2, b.y + 3, b.r, '#000', null); ctx.globalAlpha = 1;
     ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
+  }
+}
+
+// An unlit lamp picture: the same image, darkened (made once per image).
+const darkCache = new WeakMap();
+function darkened(im) {
+  if (!darkCache.has(im)) {
+    const [cv, c] = canvasOf(im.width, im.height);
+    c.drawImage(im, 0, 0);
+    c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(8,6,14,0.55)'; c.fillRect(0, 0, im.width, im.height);
+    darkCache.set(im, cv);
+  }
+  return darkCache.get(im);
+}
+
+// A letter made of light bulbs, like a fairground sign: each dot of the 5x7 font is a bulb, 2 pixels apart,
+// centred on (cx, cy).
+function marquee(ctx, ch, cx, cy, lit) {
+  const rows = glyph(ch), x0 = Math.round(cx - 4), y0 = Math.round(cy - 6);
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (rows[r] & (0x10 >> c)) {
+    ctx.fillStyle = lit ? '#ffcf4a' : '#7a5a24'; ctx.fillRect(x0 + c * 2, y0 + r * 2, 1, 1);
+    if (lit) { ctx.globalAlpha = 0.35; ctx.fillStyle = '#ffb020'; ctx.fillRect(x0 + c * 2 - 1, y0 + r * 2, 3, 1); ctx.fillRect(x0 + c * 2, y0 + r * 2 - 1, 1, 3); ctx.globalAlpha = 1; }
   }
 }
 

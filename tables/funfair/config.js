@@ -11,6 +11,8 @@
 // Rollercoaster; that drops it to the right flipper, which shoots the Big Wheel. That loop is the combo.
 
 import { arcPts, joinPath } from '../../engine/geom.js';
+import scenes from './scenes.js';
+import music from './music.js';
 
 const LANES = ['laneF', 'laneU', 'laneN'];
 const SKILL = ['skF', 'skU', 'skN'];
@@ -31,17 +33,17 @@ const rideTicket = g => {
   const i = RIDES.findIndex(id => !g.lamps[id]);
   if (i < 0) return;
   g.lamps[RIDES[i]] = 1;
-  if (i === RIDES.length - 1) { g.lamps.lock = 2; g.emit('message', { text: 'BIG TOP', sub: 'IS OPEN' }); }
+  if (i === RIDES.length - 1) { g.lamps.lock = 2; g.emit('message', { text: 'BIG TOP', sub: 'IS OPEN', scene: 'curtain' }); }
   else g.emit('message', { text: 'RIDE TICKET', sub: `${i + 1} OF ${RIDES.length}` });
 };
 
 // Hook a Duck: the first bank lights the extra ball, later banks give a growing award
 const hookADuck = g => {
   const n = g.player.counts.ducks;
-  if (n === 1) { g.lamps.xball = 2; g.emit('message', { text: 'HOOK A DUCK', sub: 'EXTRA BALL IS LIT' }); return; }
+  if (n === 1) { g.lamps.xball = 2; g.emit('message', { text: 'HOOK A DUCK', sub: 'EXTRA BALL LIT', scene: 'ducks' }); return; }
   const award = 5000 * (n - 1);
   g.addScore(award);
-  g.emit('message', { text: 'HOOK A DUCK', sub: fmt(award) });
+  g.emit('message', { text: 'HOOK A DUCK', sub: fmt(award), scene: 'ducks' });
 };
 
 // the combo window: the Big Wheel lights the Rollercoaster for 5 seconds
@@ -55,7 +57,7 @@ const coasterCombo = g => {
   const n = g.player.counts.combo ?? 0, award = 10000 * 2 ** n;
   g.addScore(award);
   g.player.counts.combo = n + 1;
-  g.emit('message', { text: n ? `COMBO X${n + 1}` : 'COASTER COMBO', sub: fmt(award) });
+  g.emit('message', { text: n ? `COMBO X${n + 1}` : 'COASTER COMBO', sub: fmt(award), scene: 'coaster' });
 };
 
 // Coconut Shy: three hits relight the kickback (or score, if it is already lit)
@@ -84,7 +86,14 @@ export default {
   multiballSave: 12,
   nameY: 610,
   drainY: 650,
-  colours: { field: '#141a33', wall: '#c9b48a', wallDark: '#5a4a36', rubber: '#f0e6d0', bumper: '#d84040', lamp: '#ffcc33', ramp: '#b84a4a', rampDark: '#6a2424', wire: '#e6e0d0' },
+  // red and gold with chrome rails, over the night fairground backdrop (tables/funfair/art)
+  colours: { field: '#141a33', wall: '#d4d8e2', wallDark: '#3a3f52', wallHi: '#ffffff', rubber: '#f0e6d0', bumper: '#d84040', lamp: '#ffcc33',
+    ramp: '#c0392b', rampDark: '#6e1a14', wire: '#f2e2b0', sling: '#d83a2a', slingDark: '#6e1a14', slingHi: '#ffcf4a', name: 'rgba(255,204,51,0.55)' },
+  decals: [{ art: 'ghost', c: [23, 236] }],
+  // bulbs round the top arch and down the outer walls
+  bulbs: { spacing: 9, paths: [joinPath([[14, 330], [14, 160]], arcPts([160, 160], 146, 180, 360, 4), [[306, 160], [306, 182]])] },
+  scenes,   // dot-matrix animations (scenes.js)
+  music,    // chiptune theme (music.js)
 
   lane: { x0: 294, x1: 312, yTop: 182 },
   plunger: { x0: 294, x1: 312, y: 604, maxPull: 22, minSpeed: 250, maxSpeed: 1350 },
@@ -127,55 +136,56 @@ export default {
 
   // each mouth leans toward the opposite flipper, so the cross shots go straight in; funnels catch near misses
   ramps: [
-    { id: 'bigWheel', style: 'ramp', width: 20, mouth: 32, minSpeed: 300, assist: 700, score: 2000, funnel: [18, 10],
+    { id: 'bigWheel', style: 'ramp', width: 20, mouth: 30, minSpeed: 300, assist: 700, score: 2000, funnel: [16, 8],
       path: joinPath([[104, 352], [86, 306], [80, 270], [80, 150]], arcPts([62, 150], 18, 0, -180, 15), [[44, 150], [44, 414]]) },
-    { id: 'coaster', style: 'wire', width: 16, mouth: 30, minSpeed: 300, assist: 700, score: 1500, funnel: [18, 10],
+    { id: 'coaster', style: 'wire', width: 16, mouth: 28, minSpeed: 300, assist: 700, score: 1500, funnel: [16, 8],
       path: joinPath([[198, 352], [216, 306], [222, 270], [222, 124]], arcPts([240, 124], 18, 180, 360, 15), [[258, 124], [258, 414]]) },
   ],
   // the dodgems
   bumpers: [
-    { id: 'dodgem1', c: [124, 160], R: 13, score: 100 },
-    { id: 'dodgem2', c: [178, 160], R: 13, score: 100 },
-    { id: 'dodgem3', c: [151, 198], R: 13, score: 100 },
+    { id: 'dodgem1', c: [124, 160], R: 13, score: 100, art: 'dodgem-red' },
+    { id: 'dodgem2', c: [178, 160], R: 13, score: 100, art: 'dodgem-blue' },
+    { id: 'dodgem3', c: [151, 198], R: 13, score: 100, art: 'dodgem-yellow' },
   ],
   slings: [
     { id: 'slingL', points: leftSling },
     { id: 'slingR', points: mirror(leftSling) },
   ],
   dropBanks: [
-    { id: 'ducks', score: 500, resetDelay: null, targets: [[duck(0), duck(0.22)], [duck(0.26), duck(0.48)], [duck(0.52), duck(0.74)], [duck(0.78), duck(1)]] },
+    { id: 'ducks', art: 'duck', score: 500, resetDelay: null, targets: [[duck(0), duck(0.22)], [duck(0.26), duck(0.48)], [duck(0.52), duck(0.74)], [duck(0.78), duck(1)]] },
   ],
-  saucers: [{ id: 'bigTop', c: [151, 268], R: 8, hold: 1.2, score: 1000, eject: { dir: [-0.3, 1], speed: 330 } }],
-  targets: [{ id: 'coconut', a: [236, 356], b: [248, 342], score: 500 }],
+  saucers: [{ id: 'bigTop', c: [151, 268], R: 10, hold: 1.2, score: 1000, eject: { dir: [-0.3, 1], speed: 330 } }],
+  targets: [{ id: 'coconut', art: 'coconut', a: [236, 356], b: [248, 342], score: 500 }],
   spinners: [{ id: 'spinner', a: [10, 270], b: [36, 270], score: 100 }],
   kickbacks: [{ id: 'kbL', a: [21, 540], b: [33, 540], dir: [0, -1], speed: 950 }],
   lanes: [
-    { id: 'laneF', a: [107, 80], b: [134, 80], label: 'F' },
-    { id: 'laneU', a: [138, 80], b: [165, 80], label: 'U' },
-    { id: 'laneN', a: [169, 80], b: [196, 80], label: 'N' },
+    { id: 'laneF', a: [107, 80], b: [134, 80], label: 'F', marquee: true },
+    { id: 'laneU', a: [138, 80], b: [165, 80], label: 'U', marquee: true },
+    { id: 'laneN', a: [169, 80], b: [196, 80], label: 'N', marquee: true },
     // a rollover in the right orbit, so a shot round the top scores
     { id: 'orbit', a: [266, 240], b: [292, 240], score: 1000 },
   ],
+  // lamps are Pixellab pictures (lit, or darkened when off); the multiplier lamps are bulb numbers
   inserts: [
-    { id: 'skF', c: [120, 102], r: 3, colour: '#ffffff' },
-    { id: 'skU', c: [151, 102], r: 3, colour: '#ffffff' },
-    { id: 'skN', c: [182, 102], r: 3, colour: '#ffffff' },
-    { id: 'ghostMode', c: [23, 300], r: 5, label: 'G', colour: '#c07aff' },
-    { id: 'kbL', c: [27, 505], r: 4, label: 'K' },
-    { id: 'lock', c: [139, 336], r: 5, label: 'B', colour: '#ff5a5a' },
-    { id: 'jackpot', c: [163, 336], r: 5, label: 'J', colour: '#ff5a5a' },
-    { id: 'xball', c: [151, 350], r: 5, label: 'X', colour: '#ff9a3a' },
-    { id: 'ghost', c: [151, 366], r: 5, label: 'G', colour: '#c07aff' },
-    { id: 'combo', c: [208, 384], r: 5, label: 'C', colour: '#5ad0ff' },
-    { id: 'coco1', c: [240, 372], r: 3, colour: '#8ad05a' },
-    { id: 'coco2', c: [248, 380], r: 3, colour: '#8ad05a' },
-    { id: 'coco3', c: [256, 388], r: 3, colour: '#8ad05a' },
-    ...RIDES.map((id, i) => ({ id, c: [115 + i * 18, 394 + Math.abs(i - 2) * -3 + 6], r: 4, label: 'T', colour: '#ffcc33' })),
-    { id: 'x2', c: [118, 466], r: 4, label: '2' },
-    { id: 'x3', c: [138, 472], r: 4, label: '3' },
-    { id: 'x4', c: [164, 472], r: 4, label: '4' },
-    { id: 'x5', c: [184, 466], r: 4, label: '5' },
-    { id: 'save', c: [151, 506], r: 4, label: 'S', colour: '#5aff8a', lit: g => (g.timeLeftSave > 0 ? 2 : 0) },
+    { id: 'skF', c: [120, 117], art: 'lamp-star', colour: '#ffffff' },
+    { id: 'skU', c: [151, 117], art: 'lamp-star', colour: '#ffffff' },
+    { id: 'skN', c: [182, 117], art: 'lamp-star', colour: '#ffffff' },
+    { id: 'ghostMode', c: [23, 300], art: 'lamp-ghost', colour: '#c07aff' },
+    { id: 'kbL', c: [27, 505], art: 'lamp-arrow', colour: '#ff5a5a' },
+    { id: 'lock', c: [140, 338], art: 'lamp-tent', colour: '#ff5a5a' },
+    { id: 'jackpot', c: [162, 338], art: 'lamp-coins', colour: '#ffcc33' },
+    { id: 'xball', c: [151, 357], art: 'lamp-xball', colour: '#ff9a3a' },
+    { id: 'ghost', c: [151, 376], art: 'lamp-ghost', colour: '#c07aff' },
+    { id: 'combo', c: [208, 384], art: 'lamp-car', colour: '#5ad0ff' },
+    { id: 'coco1', c: [238, 370], art: 'lamp-coco', colour: '#8ad05a' },
+    { id: 'coco2', c: [248, 378], art: 'lamp-coco', colour: '#8ad05a' },
+    { id: 'coco3', c: [258, 386], art: 'lamp-coco', colour: '#8ad05a' },
+    ...RIDES.map((id, i) => ({ id, c: [115 + i * 18, 397 + Math.abs(i - 2) * -3 + 6], art: 'lamp-ticket', colour: '#ffcc33' })),
+    { id: 'x2', c: [118, 466], marquee: true, label: '2' },
+    { id: 'x3', c: [138, 472], marquee: true, label: '3' },
+    { id: 'x4', c: [164, 472], marquee: true, label: '4' },
+    { id: 'x5', c: [184, 466], marquee: true, label: '5' },
+    { id: 'save', c: [151, 508], art: 'lamp-buoy', colour: '#5aff8a', lit: g => (g.timeLeftSave > 0 ? 2 : 0) },
   ],
 
   startLamps: { kbL: 1 },
@@ -201,7 +211,7 @@ export default {
 
     // Big Top multiball: lock two balls in the saucer while it is open
     { on: 'saucer:bigTop', if: { lit: 'lock', multiball: false }, do: [['lock'], ['event', 'lockCheck']] },
-    { on: 'lockCheck', if: { locks: ['>=', 2] }, do: [['lamp', 'lock', 0], ['lamp', RIDES, 0], ['multiball', 3], ['message', 'BIG TOP', 'MULTIBALL']],
+    { on: 'lockCheck', if: { locks: ['>=', 2] }, do: [['lamp', 'lock', 0], ['lamp', RIDES, 0], ['multiball', 3], ['message', 'BIG TOP', 'MULTIBALL', 'curtain']],
       else: [['message', 'BALL LOCKED', '1 MORE FOR MULTIBALL']] },
     // in multiball each ramp lights the jackpot, collected at the Big Top
     { on: 'multiballStart', do: [['lamp', 'jackpot', 0], ['dropBank', 'ducks']] },
