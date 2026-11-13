@@ -2,12 +2,16 @@
 // that sets dmd: { rows: 32 }, for more detailed pictures), two screen pixels per dot.
 // It shows the score, player and ball, and plays messages over them (`show`), which time out.
 // A message can be an animated scene: show(lines, { scene }) where scene(api, p, lines, t) draws one frame
-// with api = { set(x, y, v), text(s, x, y, { sc, align, v, clip: [x0, x1] }), lines(lines, opts), W, H } and p running
-// 0..1 over the message. lines() writes one or two lines of a message centred, as large as they fit.
+// with api = { set(x, y, v), text(s, x, y, { sc, align, v, clip: [x0, x1], small }), lines(lines, opts), W, H } and p
+// running 0..1 over the message. lines() writes one or two lines of a message centred, as large as they fit: a line
+// too long for the display drops to a small 3x5 font, or if it is still too long, scrolls across; and a single line
+// too long for the display is split over two. So any message fits, on either size of display.
 // The state can also carry `video`, a game drawn on the display instead of everything else, and `status`, a
 // line shown with the score.
 
-import { glyph, commas } from './font.js';
+import { glyph, smallGlyph, commas } from './font.js';
+
+const SCROLL = 40, SCROLL_WAIT = 0.7;   // dots a second, and seconds to wait at each end, for a line that scrolls
 
 export const DMD_W = 160;
 
@@ -16,36 +20,58 @@ export function createDmd({ rows = 16, on = [255, 150, 30], mid = [150, 80, 15],
   const dots = new Uint8Array(DMD_W * DMD_H);   // 0 off, 1 dim, 2 lit
   let img = null;
   const queue = [];                               // messages: { lines, big, until, blink }
-  let now = 0;
+  let now = 0, age = 0;                           // the time, and how long the message showing has been up
 
   const clear = () => dots.fill(0);
   const set = (x, y, v = 2) => { if (x >= 0 && x < DMD_W && y >= 0 && y < DMD_H) dots[y * DMD_W + x] = Math.max(dots[y * DMD_W + x], v); };
-  const width = (s, sc = 1) => (String(s).length * 6 - 1) * sc;
-  function text(s, x, y, { sc = 1, align = 'left', v = 2, clip = null } = {}) {
+  // small: the 3x5 font (4 dots a letter), for lines too long for the 5x7 one
+  const width = (s, sc = 1, small = false) => (small ? String(s).length * 4 - 1 : (String(s).length * 6 - 1) * sc);
+  function text(s, x, y, { sc = 1, align = 'left', v = 2, clip = null, small = false } = {}) {
     s = String(s);
-    let cx = align === 'center' ? Math.round(x - width(s, sc) / 2) : align === 'right' ? x - width(s, sc) : x;
+    const w = width(s, sc, small);
+    let cx = align === 'center' ? Math.round(x - w / 2) : align === 'right' ? x - w : x;
+    if (small) sc = 1;
+    const [gw, gh, pitch, get] = small ? [3, 5, 4, smallGlyph] : [5, 7, 6, glyph];
     for (const ch of s) {
-      const rows = glyph(ch);
-      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++)
-        if (rows[r] & (0x10 >> c)) for (let i = 0; i < sc; i++) for (let j = 0; j < sc; j++) { const px = cx + c * sc + i; if (!clip || (px >= clip[0] && px < clip[1])) set(px, y + r * sc + j, v); }
-      cx += 6 * sc;
+      const rows = get(ch);
+      for (let r = 0; r < gh; r++) for (let c = 0; c < gw; c++)
+        if (rows[r] & (1 << (gw - 1 - c))) for (let i = 0; i < sc; i++) for (let j = 0; j < sc; j++) { const px = cx + c * sc + i; if (!clip || (px >= clip[0] && px < clip[1])) set(px, y + r * sc + j, v); }
+      cx += pitch * sc;
     }
   }
 
-  // one or two lines, centred, each as large as fits (a tall display has room for double-size letters)
+  // one line centred in a band of rows: as large as fits (up to maxSc), else in the small font, else the small
+  // font scrolling across (it waits at each end), timed from the start of the message
+  function fitLine(s, top, band, maxSc, { v = 2, clip = null } = {}) {
+    s = String(s);
+    for (let sc = maxSc; sc >= 1; sc--) if (width(s, sc) <= DMD_W) { text(s, DMD_W / 2, top + Math.floor((band - 7 * sc) / 2), { sc, align: 'center', v, clip }); return; }
+    const y = top + Math.floor((band - 5) / 2), w = width(s, 1, true);
+    if (w <= DMD_W) { text(s, DMD_W / 2, y, { small: true, align: 'center', v, clip }); return; }
+    const over = w - DMD_W + 4, run = over / SCROLL, cycle = run + 2 * SCROLL_WAIT;
+    const k = Math.min(1, Math.max(0, ((age % cycle) - SCROLL_WAIT) / run));
+    text(s, 2 - Math.round(k * over), y, { small: true, v, clip });
+  }
+  // split a line too long for the display into two, at the space nearest the middle
+  const split = s => {
+    const mid = s.length / 2;
+    let best = -1;
+    for (let i = 0; i < s.length; i++) if (s[i] === ' ' && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) best = i;
+    return best < 0 ? [s] : [s.slice(0, best).trim(), s.slice(best + 1).trim()];
+  };
+
+  // one or two lines, centred, each as large as fits (a tall display has room for double-size letters). A single
+  // line too long for the display is split over two
   function lines(ls, { v = 2, clip = null, big = false } = {}) {
     if (!Array.isArray(ls)) ls = [ls];
-    const fit = (s, max) => { for (let sc = max; sc > 1; sc--) if (width(s, sc) <= DMD_W) return sc; return 1; };
+    let maxSc = tall ? 2 : 1;
+    if (ls.length === 1 && width(ls[0]) > DMD_W) {   // the two halves of a split line are the same size
+      ls = split(String(ls[0]));
+      while (maxSc > 1 && ls.some(s => width(s, maxSc) > DMD_W)) maxSc--;
+    }
     if (ls.length > 1) {
       const half = DMD_H / 2;
-      ls.slice(0, 2).forEach((s, i) => {
-        const sc = tall ? fit(s, 2) : 1;
-        text(s, DMD_W / 2, i * half + Math.floor((half - 7 * sc) / 2) + (tall ? 0 : i), { sc, align: 'center', v, clip });
-      });
-    } else {
-      const sc = fit(ls[0], tall ? 3 : big ? 2 : 1);
-      text(ls[0], DMD_W / 2, Math.floor((DMD_H - 7 * sc) / 2), { sc, align: 'center', v, clip });
-    }
+      ls.slice(0, 2).forEach((s, i) => fitLine(s, i * half + (tall ? 0 : i), half, maxSc, { v, clip }));
+    } else fitLine(ls[0], 0, DMD_H, tall ? 3 : big ? 2 : 1, { v, clip });
   }
 
   const api = { set, text, lines, W: DMD_W, H: DMD_H };
@@ -66,6 +92,7 @@ export function createDmd({ rows = 16, on = [255, 150, 30], mid = [150, 80, 15],
     let m = queue[0];
     if (m && m.start === null) m.start = t;
     if (m && t - m.start > m.secs) { queue.shift(); m = queue[0]; if (m) m.start = t; }
+    age = m ? t - m.start : t;
     if (m?.scene) { m.scene(api, Math.min(1, (t - m.start) / m.secs), m.lines, t - m.start); return; }
     if (m) {
       const visible = !m.blink || Math.floor((t - m.start) * 6) % 2 === 0;
@@ -99,7 +126,7 @@ export function createDmd({ rows = 16, on = [255, 150, 30], mid = [150, 80, 15],
       return;
     }
     text(`P${s.player}`, 0, 0, { v: 1 });
-    if (s.status) { text(s.status, 0, low, { v: 2 }); const sc = commas(s.score); text(sc, DMD_W - 1, 0, { align: 'right' }); return; }
+    if (s.status) { text(s.status, 0, low, { v: 2, small: width(s.status) > DMD_W }); const sc = commas(s.score); text(sc, DMD_W - 1, 0, { align: 'right' }); return; }
     if (s.mode) text(s.mode, 0, low, { v: Math.floor(t * 4) % 2 ? 2 : 1 }); else text(`B${s.ball}`, 0, low, { v: 1 });
     const sc = commas(s.score);
     const size = [tall ? 3 : 2, 2, 1].find(k => k === 1 || width(sc, k) <= DMD_W - 16);
