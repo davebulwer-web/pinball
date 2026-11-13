@@ -239,6 +239,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
       case 'shootAgain': sound.play('extraBall'); dmd.show('SHOOT AGAIN', { blink: true, secs: 2 }); break;
       case 'locked': sound.play('locked'); break;
       case 'multiball': sound.play('multiball'); break;
+      case 'addBall': sound.play('locked'); dmd.show('ADD A BALL', { blink: true, secs: 1.5 }); break;
       case 'jackpot': sound.play('jackpot'); break;
       case 'extraBall': sound.play('extraBall'); break;
       case 'modeStart': sound.play('modeStart'); dmd.show([e.name, `${e.secs} SECONDS`], { secs: 2 }); break;
@@ -249,6 +250,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
       case 'message': {
         const scene = e.scene && cfg.scenes?.[e.scene];
         sound.play(e.sound ?? 'award');
+        if (e.now) dmd.clearQueue();   // replaces whatever is showing (a choice being made)
         dmd.show(e.sub ? [e.text, e.sub] : e.text, scene ? { secs: scene.secs ?? 3, scene: scene.draw ?? scene } : { secs: 2, blink: /JACKPOT|MULTIBALL/.test(e.text) });
         break;
       }
