@@ -121,3 +121,24 @@
 {"file": "tables/holeinone/art/src/lamp-star.png", "size": [32, 32], "description": "bright yellow star, simple icon", "seed": 730, "bg": false, "view": null}
 {"file": "tables/holeinone/art/src/lamp-sand.png", "size": [32, 32], "description": "small pile of golden sand with a rake, simple icon", "seed": 731, "bg": false, "view": null}
 {"file": "tables/holeinone/art/src/lamp-card.png", "size": [32, 32], "description": "golf scorecard with a small pencil, simple icon", "seed": 732, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/dance.png", "size": [320, 220], "description": "top-down view of a wedding party dance floor with colourful light-up tiles, fairy lights and balloons, 16-bit pixel art", "seed": 802, "bg": true, "view": null}
+{"file": "tables/fergus/art/src/cafe.png", "size": [320, 200], "description": "top-down view of a cosy coffee shop with small round tables, coffee cups and potted plants, 16-bit pixel art", "seed": 803, "bg": true, "view": null}
+{"file": "tables/fergus/art/src/pub.png", "size": [320, 240], "description": "top-down view of a cosy pub interior with wooden tables, pints of beer, a dartboard and warm lamps, 16-bit pixel art", "seed": 801, "bg": true, "view": null}
+{"file": "tables/fergus/art/src/fergus.png", "size": [32, 32], "description": "cheerful young man in his twenties with long brown hair, a big beard and round glasses, wearing a hoodie, full body front view, cute chibi sprite", "seed": 810, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/friend1.png", "size": [32, 32], "description": "smiling young woman with a red bob haircut in a green dress, full body front view, cute chibi sprite", "seed": 811, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/friend2.png", "size": [32, 32], "description": "smiling young woman with long black curly hair in a yellow jumper, full body front view, cute chibi sprite", "seed": 812, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-broken.png", "size": [32, 32], "description": "broken red heart cracked in two, simple icon", "seed": 820, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/heart.png", "size": [32, 32], "description": "shiny red heart, simple sprite", "seed": 813, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/pint.png", "size": [32, 32], "description": "pint glass of golden beer with white foam, simple sprite", "seed": 814, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-glasses.png", "size": [32, 32], "description": "pair of round black glasses, simple icon", "seed": 821, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-rose.png", "size": [32, 32], "description": "single red rose, simple icon", "seed": 823, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-coffee.png", "size": [32, 32], "description": "white coffee cup with steam, simple icon", "seed": 822, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-phone.png", "size": [32, 32], "description": "mobile phone with a speech bubble on screen, simple icon", "seed": 825, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-note.png", "size": [32, 32], "description": "pink music note, simple icon", "seed": 826, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-ring.png", "size": [32, 32], "description": "gold ring with a diamond, simple icon", "seed": 824, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-hug.png", "size": [32, 32], "description": "two cartoon friends hugging, simple icon", "seed": 827, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-xball.png", "size": [32, 32], "description": "glossy silver metal sphere with a small gold plus sign beside it, simple icon", "seed": 829, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-star.png", "size": [32, 32], "description": "bright yellow star, simple icon", "seed": 828, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-disco.png", "size": [32, 32], "description": "sparkly silver disco ball, simple icon", "seed": 831, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-heart.png", "size": [32, 32], "description": "small pink heart, simple icon", "seed": 832, "bg": false, "view": null}
+{"file": "tables/fergus/art/src/lamp-comb.png", "size": [32, 32], "description": "brown hair comb, simple icon", "seed": 830, "bg": false, "view": null}
