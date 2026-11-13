@@ -11,6 +11,7 @@ built into single HTML pages that work offline.
 | High Noon | Wild West table with a tall 160 x 32 dot matrix, Pixellab artwork and a cowboy theme tune. Six-shooters for flippers that really fire in the Quick Draw (outlaws pop up across the bottom of the table), a Stagecoach moving target, the Bank captive ball, the Jail scoop and Jailbreak multiball, the Railroad wire ramp, the Saloon scoop, WANTED drop targets, Gold Rush, and a kickback |
 | Cup Final | Football table with a tall dot matrix: a goalkeeper who moves across to block your shots, 60-second matches against a rival through four rounds of the cup (the match score is on the dot matrix), two games played on the dot matrix with the flipper buttons (a penalty shootout and keepy-uppy), the Cross ramp for headers, the Wall drop targets, a Golden Boot extra ball and Cup Final multiball |
 | Star Siege | Space battle table with a tall dot matrix: an alien mothership that patrols the top behind three shield drop targets (knock them down, then hit it five times), the Dogfight (a space shooter on the dot matrix, flown with the flipper buttons), a black hole that swirls the ball round, a tractor beam that catches the ball and throws it at the mothership, Hyperspace ramp jumps, Hangar locks and Fleet Launch multiball, Event Horizon and Warp Speed |
+| Hole in One | Golf table with a tall dot matrix: a round of nine holes with par and yardage, where every shot is a stroke down the fairway (big shots save strokes) and the Cup at the top holes out, bunkers that slow the ball and cost a stroke, wind on some holes, two games played on the dot matrix with the flipper buttons (the Putting Green and the Long Drive), the Buggy Path ramp, TEE drop targets and 19th Hole multiball |
 | Parts Test | Grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
 | Feel Test | Grey test table for tuning the ball, flippers, plunger and camera |
 
@@ -62,7 +63,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 - `tables/funfair/`: also `art.js` (images to inline), `art/` (built images, with the Pixellab sources in `art/src/`),
   `scenes.js` (dot-matrix animations) and `music.js` (the theme tune)
 - `art/gen.py`: makes an image with Pixellab (needs `PIXELLAB_API_KEY`); every prompt and seed is logged in
-  `art/prompts/log.jsonl`. `art/compose_funfair.py`, `art/compose_raceday.py`, `art/compose_highnoon.py`, `art/compose_cupfinal.py` and `art/compose_starsiege.py` join each table's backdrop panels and crop the sprites.
+  `art/prompts/log.jsonl`. `art/compose_funfair.py`, `art/compose_raceday.py`, `art/compose_highnoon.py`, `art/compose_cupfinal.py`, `art/compose_starsiege.py` and `art/compose_holeinone.py` join each table's backdrop panels and crop the sprites.
 - `tables/index.js`: the list of tables, in menu order. [ADDING-A-TABLE.md](ADDING-A-TABLE.md) explains how to make a new one.
 - `previews.cjs`: takes each table's picture for the menu (`tables/<id>/preview.png`)
 - `test/`: headless physics and gameplay tests
@@ -81,7 +82,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 | Plunger | `plunger` | Launches the ball; pull length sets the power |
 | Pop bumper | `bumpers` | Kicks the ball away |
 | Slingshot | `slings` | Kicks sideways on a firm hit |
-| Vortex, magnet | `fields` | No collision: a vortex swirls a ball passing near it round (Star Siege's black hole); a magnet, switched on by `['magnet', id, secs]`, pulls a ball in, holds it and throws it out (the tractor beam) |
+| Vortex, magnet, sand, wind | `fields` | No collision: a vortex swirls a ball passing near it round (Star Siege's black hole); a magnet, switched on by `['magnet', id, secs]`, pulls a ball in, holds it and throws it out (the tractor beam); sand slows a ball (Hole in One's bunkers); wind pushes it one way while its lamp is lit |
 | Standup target | `targets` | Scores when hit. With `move` it slides to and fro (High Noon's Stagecoach), or with `move: { follow }` it moves to block the ball (Cup Final's goalkeeper) |
 | Captive ball | `captives` | A ball that stays in its channel (walls with `captiveOnly`); hit it to knock it into a target |
 | Drop target bank | `dropBanks` | Targets drop when hit; `bankDown` when all are down; resets after a delay |
@@ -143,4 +144,5 @@ A table's look is three layers, so the art always matches where the ball goes:
 6. A second table: Race Day, with the parts and rules Fun Fair doesn't use
 7. A third table: High Noon, with pistol flippers, a moving target, a captive ball and a tall dot matrix
 8. A fourth table: Cup Final, with a goalkeeper, timed matches and games on the dot matrix
-9. A fifth table (this): Star Siege, with a black hole, a tractor beam and a space shooter on the dot matrix
+9. A fifth table: Star Siege, with a black hole, a tractor beam and a space shooter on the dot matrix
+10. A sixth table (this): Hole in One, with bunkers, wind, a round of golf and putting and driving games on the dot matrix
