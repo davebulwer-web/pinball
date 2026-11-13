@@ -78,6 +78,7 @@ const pickSkill = g => SKILL.forEach((id, i) => (g.lamps[id] = i === (g.player.b
 export default {
   id: 'funfair',
   name: 'Fun Fair',
+  tagline: 'A night at the fair: ride the Big Wheel and the Rollercoaster, hook a duck and open the Big Top.',
   size: [320, 640],
   gravity: 780,
   ballRadius: 5,

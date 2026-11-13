@@ -20,6 +20,8 @@ const showBonusX = g => ['x2', 'x3', 'x4', 'x5'].forEach((id, i) => (g.lamps[id]
 export default {
   id: 'parts',
   name: 'Parts Test',
+  tagline: 'Every engine part on one grey table.',
+  workshop: true,
   size: [320, 640],
   gravity: 780,
   ballRadius: 5,

@@ -60,11 +60,19 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
     }
     // the normal score screen
     const s = state();
+    if (s.entry) {
+      const e = s.entry, blink = Math.floor(t * 3) % 3 === 2;
+      text(e.players > 1 ? `PLAYER ${e.player} HIGH SCORE` : 'NEW HIGH SCORE', DMD_W / 2, 0, { align: 'center' });
+      const name = [...e.name].map((c, i) => (i === e.slot && blink ? ' ' : c === ' ' ? '_' : c)).join('');
+      text(`NAME ${name}`, DMD_W / 2, 9, { align: 'center' });
+      return;
+    }
     if (s.attract) {
-      const phase = Math.floor(t / 2.5) % 3;
+      const phase = Math.floor(t / 2.5) % 4;
       if (phase === 0) { text(s.title, DMD_W / 2, 0, { align: 'center' }); text(s.touch ? 'TAP TO PLAY' : 'PRESS SPACE', DMD_W / 2, 9, { align: 'center', v: Math.floor(t * 2) % 2 ? 2 : 1 }); }
-      else if (phase === 1) { text('LAST SCORE', DMD_W / 2, 0, { align: 'center' }); text(commas(s.lastScore ?? 0), DMD_W / 2, 9, { align: 'center' }); }
-      else { text('HOW TO PLAY', DMD_W / 2, 0, { align: 'center' }); text(s.touch ? 'TAP ? BELOW' : 'PRESS H', DMD_W / 2, 9, { align: 'center' }); }
+      else if (phase === 1 && s.champion) { text('HIGH SCORE', DMD_W / 2, 0, { align: 'center' }); text(`${s.champion[0]}  ${commas(s.champion[1])}`, DMD_W / 2, 9, { align: 'center' }); }
+      else if (phase === 2 || phase === 1) { text('LAST SCORE', DMD_W / 2, 0, { align: 'center' }); text(commas(s.lastScore ?? 0), DMD_W / 2, 9, { align: 'center' }); }
+      else { text('1 TO 4 PLAYERS', DMD_W / 2, 0, { align: 'center' }); text(s.touch ? 'RULES: TAP ?' : 'RULES: PRESS H', DMD_W / 2, 9, { align: 'center' }); }
       return;
     }
     text(`P${s.player}`, 0, 0, { v: 1 });

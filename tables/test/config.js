@@ -11,6 +11,8 @@ const LANES = ['laneF', 'laneU', 'laneN'];
 export default {
   id: 'test',
   name: 'Feel Test',
+  tagline: 'Ball, flippers and plunger, for tuning the feel.',
+  workshop: true,
   size: [320, 640],
   gravity: 780,
   ballRadius: 5,

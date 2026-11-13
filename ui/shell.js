@@ -1,7 +1,9 @@
 // The shared screen for every table: owns the canvas, scaling, the scrolling camera, touch and keyboard
 // input, the dot-matrix strip, sound, pause, the debug overlay (D key or ?debug) and the tuning panel
-// (?tune). A table's page just calls startTable(config), or startTable(config, { art }) with images from
-// ui/art.js loadArt().
+// (?tune), and the screens between games: 1 to 4 players, high scores and name entry, and the way back
+// to the table menu. A table's page just calls startTable(config), or startTable(config, { art }) with
+// images from ui/art.js loadArt(). Pass onMenu to show a "< TABLES" button (the menu page passes one;
+// a single table page gets one that opens window.PINBALL_MENU, set by build.mjs). stop() ends the table.
 //
 // Screen: 320 pixels wide. The height follows the window shape (480 to 600), so a phone in portrait is
 // filled; the top 32 rows are the dot-matrix strip and the rest is the view onto the playfield.
@@ -12,10 +14,14 @@ import { createDmd } from './dmd.js';
 import { sound } from './sound.js';
 import { commas, drawText } from './font.js';
 import { helpPages, drawHelp, drawHelpButton, helpButton } from './help.js';
+import { loadScores, saveScores, qualifies, addScore } from './scores.js';
+import { LETTERS, inside, playerButtons, drawPlayerButtons, menuButton, drawMenuButton, drawScores, entryLayout, drawEntry } from './screens.js';
 
 const W = 320, DMD_ROWS = 32;
 
-export function startTable(cfg, { canvas = document.getElementById('screen'), art = {} } = {}) {
+export function startTable(cfg, { canvas = document.getElementById('screen'), art = {}, onMenu } = {}) {
+  const life = new AbortController(), on = { signal: life.signal };   // every listener goes when the table stops
+  const toMenu = onMenu ?? (typeof window !== 'undefined' && window.PINBALL_MENU ? () => { location.href = window.PINBALL_MENU; } : null);
   const ctx = canvas.getContext('2d');
   const game = new Game(cfg);
   const { base: playfield, overlay } = buildPlayfield(cfg, art);
@@ -28,9 +34,15 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
   let paused = false, H = 480, camY = cfg.size[1], shakeUntil = 0, shakeDx = 0, touchSeen = false;
   let lastScore = load('lastScore', 0), overAt = -9;
   let help = -1;                                   // instructions page showing, or -1
+  let scores = loadScores(cfg);
+  let entry = null, entries = [];                   // name entry showing, and players still to enter
+  let showScores = { until: -1, place: -1 };        // high score table showing after a game, and the place to flash
+  let lastName = load('name', 'AAA'), quietUntil = 0;   // no new game until a moment after name entry
   const isTouch = () => touchSeen || 'ontouchstart' in window;
   const pages = () => helpPages(cfg, isTouch());
-  const helpOffered = () => game.state === 'attract' || game.state === 'over' || paused;
+  // between games: the game is over (and names are entered) or not started yet
+  const between = () => !entry && now > quietUntil && (game.state === 'attract' || (game.state === 'over' && game.world.time - overAt > 1.2));
+  const helpOffered = () => (game.state === 'attract' || game.state === 'over' || paused) && !entry;
   const turnHelp = d => { help += d; if (help < 0) help = 0; if (help >= pages().length) help = -1; };
 
   // ---------- sizing ----------
@@ -43,14 +55,48 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     canvas.style.width = `${Math.floor(W * scale)}px`;
     canvas.style.height = `${Math.floor(H * scale)}px`;
   }
-  window.addEventListener('resize', fit);
+  window.addEventListener('resize', fit, on);
   fit();
 
   // ---------- input ----------
-  const startGame = () => {
-    if (game.state === 'attract' || (game.state === 'over' && game.world.time - overAt > 1.2)) { dmd.clearQueue(); game.start(1); return true; }
-    return false;
+  const startGame = (players = 1) => {
+    if (!between()) return false;
+    dmd.clearQueue(); showScores.until = -1; game.start(players);
+    return true;
   };
+
+  // name entry for each player whose score makes the high score table, in turn
+  const nextEntry = () => {
+    while (entries.length) {
+      const p = entries.shift();
+      if (!qualifies(scores, p.score)) continue;
+      const name = [...lastName.padEnd(3).slice(0, 3)].map(c => Math.max(0, LETTERS.indexOf(c)));
+      entry = { player: p.n, players: game.players.length, score: p.score, name, slot: 0 };
+      sound.play('highScore');
+      return;
+    }
+    entry = null;
+  };
+  const finishEntry = () => {
+    const name = entry.name.map(i => LETTERS[i]).join('');
+    const r = addScore(scores, name, entry.score);
+    scores = r.list; saveScores(cfg, scores);
+    lastName = name; save('name', name);
+    showScores = { until: now + 6, place: r.place }; quietUntil = now + 0.8;
+    sound.play('award');
+    nextEntry();
+  };
+  const turnLetter = d => { entry.name[entry.slot] = (entry.name[entry.slot] + d + LETTERS.length) % LETTERS.length; sound.play('lane'); };
+  const nextSlot = () => { if (entry.slot < 2) { entry.slot++; sound.play('target'); } else finishEntry(); };
+  function tapEntry(cx, cy) {
+    const L = entryLayout(W, DMD_ROWS);
+    if (inside(L.ok, cx, cy)) return finishEntry();
+    for (const s of L.slots) {
+      if (inside(s.up, cx, cy, 5)) { entry.slot = s.i; return turnLetter(1); }
+      if (inside(s.down, cx, cy, 5)) { entry.slot = s.i; return turnLetter(-1); }
+      if (inside(s.letter, cx, cy)) { entry.slot = s.i; return; }
+    }
+  }
   const canPlunge = () => game.state === 'ready' && game.ballInLane();
   const held = { left: new Set(), right: new Set() };          // which pointers/keys hold each flipper
   const setFlip = (side, who, down) => {
@@ -71,7 +117,13 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     const cx = (ev.clientX - r.left) / r.width * W, cy = (ev.clientY - r.top) / r.height * H;
     const b = helpButton(W, H), onButton = cx >= b.x - 6 && cy >= b.y - 6 && cx <= b.x + b.s + 4 && cy <= b.y + b.s + 4;
     if (help >= 0) { if (onButton) help = -1; else turnHelp(cx < W / 2 ? -1 : 1); return; }
+    if (entry) { tapEntry(cx, cy); return; }
     if (onButton && helpOffered()) { help = 0; return; }
+    if (between() && !paused) {
+      if (toMenu && inside(menuButton(DMD_ROWS), cx, cy)) { toMenu(); return; }
+      const pick = playerButtons(W, H).find(b => inside(b, cx, cy));
+      if (pick) { startGame(pick.n); pointers.set(ev.pointerId, { mode: 'none', type: ev.pointerType }); return; }
+    }
     if (paused) { paused = false; return; }
     if (ev.clientY - r.top < (DMD_ROWS / H) * r.height && game.state !== 'attract' && game.state !== 'over') { paused = true; return; }
     if (startGame()) { pointers.set(ev.pointerId, { mode: 'none', type: ev.pointerType }); return; }
@@ -96,19 +148,19 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     if (p.mode === 'plunge') endPlunge(ev.pointerId);
     if (p.mode === 'flip') setFlip(p.side, ev.pointerId, false);
   };
-  window.addEventListener('pointerdown', onDown, { passive: false });
-  window.addEventListener('pointermove', onMove);
-  window.addEventListener('pointerup', onUp);
-  window.addEventListener('pointercancel', onUp);
-  window.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('pointerdown', onDown, { passive: false, signal: life.signal });
+  window.addEventListener('pointermove', onMove, on);
+  window.addEventListener('pointerup', onUp, on);
+  window.addEventListener('pointercancel', onUp, on);
+  window.addEventListener('contextmenu', e => e.preventDefault(), on);
   // Safety nets for a lost pointerup (it can happen on phones and inside frames): when no finger is
   // left on the glass, or the page loses focus, let go of everything.
   const releaseAll = type => {
     for (const [id, p] of [...pointers]) if (!type || p.type === type) onUp({ pointerId: id });
   };
-  window.addEventListener('touchend', e => { if (e.touches.length === 0) releaseAll('touch'); });
-  window.addEventListener('touchcancel', e => { if (e.touches.length === 0) releaseAll('touch'); });
-  window.addEventListener('blur', () => { releaseAll(); for (const side of ['left', 'right']) { held[side].clear(); game.flip(side, false); } });
+  window.addEventListener('touchend', e => { if (e.touches.length === 0) releaseAll('touch'); }, on);
+  window.addEventListener('touchcancel', e => { if (e.touches.length === 0) releaseAll('touch'); }, on);
+  window.addEventListener('blur', () => { releaseAll(); for (const side of ['left', 'right']) { held[side].clear(); game.flip(side, false); } }, on);
 
   const keys = {
     KeyZ: 'left', ShiftLeft: 'left', ControlLeft: 'left',
@@ -131,6 +183,20 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
       else if (c === 'KeyH' || c === 'KeyI' || c === 'Escape' || c === 'Space') help = -1;
       return;
     }
+    if (entry) {        // name entry takes the keys too: type letters, or flippers to change one and Space to move on
+      ev.preventDefault();
+      if (!down) { if (keys[c]) setFlip(keys[c], c, false); return; }
+      const ch = ev.key?.length === 1 ? ev.key.toUpperCase() : '';
+      if (c === 'Enter') finishEntry();
+      else if (c === 'Space' || c === 'ArrowRight') nextSlot();
+      else if (c === 'Backspace' || c === 'ArrowLeft') { if (entry.slot > 0) entry.slot--; }
+      else if (keys[c] === 'left' || c === 'ArrowDown') turnLetter(-1);
+      else if (keys[c] === 'right' || c === 'ArrowUp') turnLetter(1);
+      else if (ch && ch !== ' ' && LETTERS.includes(ch)) { entry.name[entry.slot] = LETTERS.indexOf(ch); nextSlot(); }
+      return;
+    }
+    if (down && between() && /^(Digit|Numpad)[1-4]$/.test(c)) { ev.preventDefault(); startGame(+c.slice(-1)); return; }
+    if (down && (c === 'Escape' || c === 'Backspace') && between() && toMenu) { ev.preventDefault(); toMenu(); return; }
     if (down && (c === 'KeyH' || c === 'KeyI')) { if (game.state === 'play' || game.state === 'ready') paused = true; help = 0; return; }
     if (keys[c]) { ev.preventDefault(); if (!paused || !down) setFlip(keys[c], c, down); return; }
     if (c === 'Space' || c === 'Enter' || c === 'ArrowDown') {
@@ -147,14 +213,14 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     else if (c === 'KeyM') sound.toggle();
     else if (c === 'KeyD') debug = !debug;
   };
-  window.addEventListener('keydown', e => onKey(e, true));
-  window.addEventListener('keyup', e => onKey(e, false));
+  window.addEventListener('keydown', e => onKey(e, true), on);
+  window.addEventListener('keyup', e => onKey(e, false), on);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) return;
     if (game.state === 'play') paused = true;
     releaseAll(); for (const side of ['left', 'right']) { held[side].clear(); game.flip(side, false); }
     for (const c of Object.keys(keys)) for (const side of ['left', 'right']) held[side].delete(c);
-  });
+  }, on);
 
   // ---------- events from the game ----------
   function handle(e) {
@@ -187,9 +253,14 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
         break;
       }
       case 'over':
-        sound.play('over'); sound.stopMusic(); overAt = game.world.time;
-        lastScore = e.scores[0]; save('lastScore', lastScore);
-        dmd.show('GAME OVER', { secs: 2 }); dmd.show(['FINAL SCORE', commas(lastScore)], { secs: 3 });
+        sound.play('over'); sound.stopMusic(); overAt = game.world.time; dmd.clearQueue();
+        lastScore = Math.max(...e.scores); save('lastScore', lastScore);
+        dmd.show('GAME OVER', { secs: 2 });
+        if (e.scores.length === 1) dmd.show(['FINAL SCORE', commas(lastScore)], { secs: 3 });
+        else for (let i = 0; i < e.scores.length; i += 2) dmd.show(e.scores.slice(i, i + 2).map((s, k) => `P${i + k + 1}  ${commas(s)}`), { secs: 2.5 });
+        entries = game.players.map(p => ({ n: p.n, score: p.score }));
+        nextEntry();
+        if (!entry) showScores = { until: now + 5, place: -1 };
         break;
       case 'lost': console.warn('ball escaped the table', e); break;
     }
@@ -199,8 +270,9 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
   if (params.has('tune')) tuningPanel(game);
 
   // ---------- loop ----------
-  let last = performance.now(), now = 0;
+  let last = performance.now(), now = 0, stopped = false;
   function frame(ms) {
+    if (stopped) return;
     const dt = Math.min(0.05, (ms - last) / 1000); last = ms; now += dt;
     if (plungeBy !== null) game.pull(Math.max(plungeDrag, Math.min(1, (performance.now() - plungeStart) / 1000)));
     sound.pauseMusic(paused);
@@ -230,23 +302,33 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     ctx.restore();
     dmd.frame(now, () => ({
       attract: game.state === 'attract' || (game.state === 'over' && !dmd.busy()),
-      title: cfg.name.toUpperCase(), touch: isTouch(), lastScore,
+      title: cfg.name.toUpperCase(), touch: isTouch(), lastScore, champion: scores[0],
+      entry: entry && { player: entry.player, players: entry.players, name: entry.name.map(i => LETTERS[i]).join(''), slot: entry.slot },
       player: game.player?.n ?? 1, ball: game.player?.ball ?? 1, score: game.player?.score ?? 0,
       mode: Object.values(game.modes).map(m => `${Math.ceil(m.left)}`)[0],
     }));
     dmd.paint(ctx, 0, 0);
-    if (help >= 0) drawHelp(ctx, pages(), help, sprites.art, { W, top: DMD_ROWS, h: viewH, touch: isTouch(), t: now });
+    const view = { W, top: DMD_ROWS, h: viewH, touch: isTouch(), t: now };
+    if (help >= 0) drawHelp(ctx, pages(), help, sprites.art, view);
+    else if (entry) drawEntry(ctx, entry, view);
     else {
       if (paused) {
         ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, DMD_ROWS, W, viewH);
         drawPaused(ctx, H);
+      }
+      if (between() && !paused) {
+        // the high score table: after a game, then for 5 seconds in every 15 while the table waits
+        if (now < showScores.until || now % 15 > 10) drawScores(ctx, scores, { ...view, highlight: now < showScores.until ? showScores.place : -1 });
+        drawPlayerButtons(ctx, W, H, now, isTouch());
+        if (toMenu) drawMenuButton(ctx, DMD_ROWS);
       }
       if (helpOffered()) drawHelpButton(ctx, W, H);
     }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(t => { last = t; frame(t); });
-  window.pinball = { game, dmd, sound };   // handy in the browser console
+  const stop = () => { stopped = true; life.abort(); sound.stopMusic(); };
+  window.pinball = { game, dmd, sound, stop, scores: () => scores };   // handy in the browser console
   return window.pinball;
 }
 
