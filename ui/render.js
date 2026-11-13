@@ -376,7 +376,7 @@ export function drawDynamic(ctx, game, sprites, t) {
     const lit = game.lamps[tg.id], fl = t - (game.flashes[tg.id] ?? -9) < 0.12;
     const im = sprites.art?.[tg.art];
     if (im) ctx.drawImage(im, Math.round((tg.a[0] + tg.b[0]) / 2 - im.width / 2 + (tg.artOffset?.[0] ?? 0)), Math.round((tg.a[1] + tg.b[1]) / 2 - im.height + (tg.artOffset?.[1] ?? 0) + (fl ? -1 : 0)));
-    if (im && tg.bar === false) continue;   // the picture is the target (Star Siege's mothership)
+    if (tg.bar === false) continue;   // the picture is the target (Star Siege's mothership), or a toy draws it
     ctx.strokeStyle = 'transparent';
     const n = Math.ceil(Math.hypot(tg.b[0] - tg.a[0], tg.b[1] - tg.a[1]));
     for (let k = 0; k <= n; k++) {

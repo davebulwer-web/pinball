@@ -142,3 +142,23 @@
 {"file": "tables/fergus/art/src/lamp-disco.png", "size": [32, 32], "description": "sparkly silver disco ball, simple icon", "seed": 831, "bg": false, "view": null}
 {"file": "tables/fergus/art/src/lamp-heart.png", "size": [32, 32], "description": "small pink heart, simple icon", "seed": 832, "bg": false, "view": null}
 {"file": "tables/fergus/art/src/lamp-comb.png", "size": [32, 32], "description": "brown hair comb, simple icon", "seed": 830, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/helpdesk.png", "size": [320, 200], "description": "top-down view of an IT help desk counter with phones, a laptop, a printer and stacks of paper, 16-bit pixel art", "seed": 903, "bg": true, "view": null}
+{"file": "tables/angryandy/art/src/office.png", "size": [320, 240], "description": "top-down view of an open plan office with desks, computer monitors, office chairs, potted plants and a water cooler, 16-bit pixel art", "seed": 901, "bg": true, "view": null}
+{"file": "tables/angryandy/art/src/servers.png", "size": [320, 220], "description": "top-down view of a server room with rows of black server racks, blinking green and blue lights and tangled cables on the floor, 16-bit pixel art", "seed": 902, "bg": true, "view": null}
+{"file": "tables/angryandy/art/src/andy-red.png", "size": [32, 32], "description": "furious bald 60 year old man with a bright red face and steam coming from his head, grey moustache, white shirt and tie, fists clenched, full body front view, cute chibi sprite", "seed": 911, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/monitor.png", "size": [32, 32], "description": "old computer monitor showing a blue error screen, seen from the front, simple sprite", "seed": 912, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/andy.png", "size": [32, 32], "description": "grumpy bald 60 year old man with a grey moustache wearing a white shirt and tie and a lanyard, arms folded, full body front view, cute chibi sprite", "seed": 910, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-printer.png", "size": [32, 32], "description": "office printer with a jammed crumpled sheet of paper, simple icon", "seed": 920, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-phone.png", "size": [32, 32], "description": "ringing black office desk phone, simple icon", "seed": 921, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-email.png", "size": [32, 32], "description": "white envelope email icon with a red notification dot, simple icon", "seed": 922, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-coffee.png", "size": [32, 32], "description": "office coffee mug with steam, simple icon", "seed": 924, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-key.png", "size": [32, 32], "description": "gold key with a padlock, simple icon", "seed": 923, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-ticket.png", "size": [32, 32], "description": "yellow paper ticket with a number, simple icon", "seed": 925, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-wifi.png", "size": [32, 32], "description": "wifi signal symbol with a red cross, simple icon", "seed": 926, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-fire.png", "size": [32, 32], "description": "orange flame, simple icon", "seed": 928, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-floppy.png", "size": [32, 32], "description": "blue floppy disk, simple icon", "seed": 927, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-xball.png", "size": [32, 32], "description": "glossy silver metal sphere with a small gold plus sign beside it, simple icon", "seed": 930, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-star.png", "size": [32, 32], "description": "bright yellow star, simple icon", "seed": 929, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-plug.png", "size": [32, 32], "description": "electric power plug with a cable, simple icon", "seed": 931, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-band.png", "size": [32, 32], "description": "red rubber band, simple icon", "seed": 932, "bg": false, "view": null}
+{"file": "tables/angryandy/art/src/lamp-angry.png", "size": [32, 32], "description": "angry red face emoji with steam, simple icon", "seed": 933, "bg": false, "view": null}
