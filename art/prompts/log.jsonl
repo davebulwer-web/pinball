@@ -178,3 +178,18 @@
 {"file": "tables/grandslam/art/src/lamp-star.png", "size": [32, 32], "description": "a bright yellow star", "seed": 0, "bg": false, "view": null}
 {"file": "tables/grandslam/art/src/lamp-pennant.png", "size": [32, 32], "description": "a red triangular sports pennant flag on a stick", "seed": 0, "bg": false, "view": null}
 {"file": "tables/grandslam/art/src/lamp-hotdog.png", "size": [32, 32], "description": "a hot dog in a bun with yellow mustard", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-lights.png", "size": [32, 32], "description": "a row of five red starting lights", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/car.png", "size": [32, 32], "description": "a small red open-wheel formula racing car, top down view, nose pointing up", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-trophy.png", "size": [32, 32], "description": "a gold racing trophy cup", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/grandstand.png", "size": [320, 200], "description": "top-down view of a motor racing circuit: a packed grandstand full of fans with flags at the top, a row of pit garages below it, then the grey asphalt pit straight with a white start line, pixel art", "seed": 0, "bg": true, "view": null}
+{"file": "tables/grandprix/art/src/lamp-helmet.png", "size": [32, 32], "description": "a red racing driver helmet with visor", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-bottle.png", "size": [32, 32], "description": "a green champagne bottle spraying foam", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-flag.png", "size": [32, 32], "description": "a black and white chequered racing flag", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-watch.png", "size": [32, 32], "description": "a silver stopwatch", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/track.png", "size": [320, 240], "description": "top-down view of a winding grey asphalt race track with red and white striped kerbs on the corners, green grass and gravel runoff, tyre barriers, pixel art", "seed": 0, "bg": true, "view": null}
+{"file": "tables/grandprix/art/src/lamp-wing.png", "size": [32, 32], "description": "a red racing car rear wing spoiler", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-tyre.png", "size": [32, 32], "description": "a black racing tyre with a yellow stripe", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/tyres.png", "size": [64, 64], "description": "a stack of black racing tyres seen from above, round", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-star.png", "size": [32, 32], "description": "a bright yellow star", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-wrench.png", "size": [32, 32], "description": "a silver wheel gun wrench tool", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandprix/art/src/lamp-xball.png", "size": [32, 32], "description": "a shiny golden steering wheel", "seed": 0, "bg": false, "view": null}

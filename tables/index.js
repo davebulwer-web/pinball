@@ -8,8 +8,9 @@ import cupfinal from './cupfinal/config.js';
 import starsiege from './starsiege/config.js';
 import holeinone from './holeinone/config.js';
 import grandslam from './grandslam/config.js';
+import grandprix from './grandprix/config.js';
 import parts from './parts/config.js';
 import test from './test/config.js';
 
-export const tables = [funfair, raceday, highnoon, cupfinal, starsiege, holeinone, grandslam, parts, test];
+export const tables = [funfair, raceday, highnoon, cupfinal, starsiege, holeinone, grandslam, grandprix, parts, test];
 export const tableIds = tables.map(t => t.id);
