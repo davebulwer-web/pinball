@@ -106,6 +106,16 @@ export class World {
     this.ballBall();
   }
 
+  // distance from a ball's centre to a wall's surface (for checking a raisable post won't trap a ball)
+  distance(s, b) {
+    let q;
+    if (s.kind === 'seg') q = closestOnSeg(b.x, b.y, s.a[0], s.a[1], s.b[0], s.b[1]);
+    else if (s.kind === 'arc') q = closestOnArc(b.x, b.y, s);
+    else if (s.kind === 'circle') return Math.max(0, Math.hypot(b.x - s.c[0], b.y - s.c[1]) - s.R - (s.r ?? 0));
+    else return Infinity;
+    return Math.max(0, Math.hypot(b.x - q[0], b.y - q[1]) - (s.r ?? 0));
+  }
+
   collide(b, s) {
     if (s.layer !== b.layer || s.disabled) return;
     if (s.box && (b.x + b.r < s.box[0] || b.x - b.r > s.box[2] || b.y + b.r < s.box[1] || b.y - b.r > s.box[3])) {

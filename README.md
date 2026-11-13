@@ -7,6 +7,7 @@ built into single HTML pages that work offline.
 | Table | Status |
 | --- | --- |
 | Fun Fair | Full layout and rules with Pixellab artwork, dot-matrix scenes and a theme tune (F-U-N lanes and skill shot, dodgems, Big Wheel ramp, Rollercoaster rail, Hook a Duck, Big Top multiball, Coconut Shy, Ghost Train) |
+| Race Day | Full layout and rules with Pixellab artwork, dot-matrix scenes and a theme tune (B-E-T lanes and skill shot, an upper flipper, the Stables scoop with a subway, pick-your-horse races on a race track toy, the Home Straight ramp, the Fences and a Jump Off hurry-up, the Bookie's Tip mystery award, the Paddock diverter and bumpers, the Lucky Horseshoe up-post, Grand National multiball with add-a-ball and a super jackpot) |
 | Parts Test | Grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
 | Feel Test | Grey test table for tuning the ball, flippers, plunger and camera |
 
@@ -58,7 +59,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 - `tables/funfair/`: also `art.js` (images to inline), `art/` (built images, with the Pixellab sources in `art/src/`),
   `scenes.js` (dot-matrix animations) and `music.js` (the theme tune)
 - `art/gen.py`: makes an image with Pixellab (needs `PIXELLAB_API_KEY`); every prompt and seed is logged in
-  `art/prompts/log.jsonl`. `art/compose_funfair.py` joins the Fun Fair backdrop panels and crops the sprites.
+  `art/prompts/log.jsonl`. `art/compose_funfair.py` and `art/compose_raceday.py` join each table's backdrop panels and crop the sprites.
 - `tables/index.js`: the list of tables, in menu order. [ADDING-A-TABLE.md](ADDING-A-TABLE.md) explains how to make a new one.
 - `previews.cjs`: takes each table's picture for the menu (`tables/<id>/preview.png`)
 - `test/`: headless physics and gameplay tests
@@ -73,7 +74,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 
 | Part | Config key | What it does |
 | --- | --- | --- |
-| Flipper | `flippers` | Player bat; passes its surface speed to the ball |
+| Flipper | `flippers` | Player bat; passes its surface speed to the ball. Add more for upper flippers: every flipper on a side moves together |
 | Plunger | `plunger` | Launches the ball; pull length sets the power |
 | Pop bumper | `bumpers` | Kicks the ball away |
 | Slingshot | `slings` | Kicks sideways on a firm hit |
@@ -81,10 +82,12 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 | Drop target bank | `dropBanks` | Targets drop when hit; `bankDown` when all are down; resets after a delay |
 | Rollover lane | `lanes` | Scores when rolled over |
 | Spinner | `spinners` | Spins by the ball's speed, scores per turn |
-| Saucer | `saucers` | Catches the ball, then kicks it out (rules can count it as a lock) |
+| Saucer | `saucers` | Catches the ball, then kicks it out (rules can count it as a lock). With `exit` it is a scoop with a subway: the ball comes out somewhere else |
 | Kickback | `kickbacks` | Fires a ball back out of an outlane while its lamp is lit |
 | Ramp or wire rail | `ramps` | Raised path on its own layer; slow balls are turned back at the mouth |
 | One-way gate | `gates` | Solid from one side only |
+| Diverter or up-post | `walls` or `posts` with an `id` | Raised and lowered by the rules; waits for a ball to move clear before it rises |
+| Toy | `toys` | A picture the game state moves, such as Race Day's horses |
 | Lamp | `inserts` | A lamp painted on the playfield, lit by the rules |
 
 ## Rules
@@ -99,6 +102,9 @@ Rules are data in the table config, for example:
 ```
 
 Triggers, conditions, actions, lamp groups and timed modes are listed at the top of `engine/rules.js`.
+Race Day adds hurry-ups (a mode with a falling value, scored by `collect`), mystery awards (`mystery`),
+picking with the flippers while a saucer holds the ball (`hold` and a rotating lamp group), raising posts
+(`post`) and add-a-ball (`addBall`).
 A drain pays the bonus times the multiplier; an extra ball gives a shoot again.
 
 ## Replacing sounds
@@ -122,5 +128,5 @@ A table's look is three layers, so the art always matches where the ball goes:
 2. Engine parts: drop targets, spinners, ramps and wire rails on layers, saucers, locks, multiball, kickback, the rules system
 3. Fun Fair grey box: full layout and rules with placeholder drawing
 4. Fun Fair art: Pixellab artwork, dot-matrix scenes, music
-5. Finish (this): high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade, ADDING-A-TABLE.md
-6. A second table
+5. Finish: high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade, ADDING-A-TABLE.md
+6. A second table (this): Race Day, with the parts and rules Fun Fair doesn't use

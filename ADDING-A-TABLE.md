@@ -6,7 +6,7 @@ reuse the parts and the rules system with a new layout, new rules and new art. T
 
 ## 1. Copy a table
 
-Copy `tables/funfair/` to `tables/<your-id>/` (or `tables/parts/` to start from plain grey). Then:
+Copy `tables/funfair/` or `tables/raceday/` to `tables/<your-id>/` (or `tables/parts/` to start from plain grey). Then:
 
 - In `config.js`, set `id` (the folder name), `name` and `tagline` (one line for the menu).
 - Add it to `tables/index.js`: import its config and put it in `tables`, in menu order.
@@ -20,7 +20,7 @@ whole table never has to fit on screen.
 - Walls, posts and rails are lists of points. `engine/geom.js` has helpers for arcs, joined paths and
   rails a set distance apart.
 - Each part has its own key: `flippers`, `plunger`, `bumpers`, `slings`, `targets`, `dropBanks`, `lanes`,
-  `spinners`, `saucers`, `kickbacks`, `ramps`, `gates`, `inserts`. All of their settings are listed at the
+  `spinners`, `saucers`, `kickbacks`, `ramps`, `gates`, `inserts`, `toys`. All of their settings are listed at the
   top of `engine/table.js`. `tables/parts/config.js` uses every one of them.
 - Press D while playing (or add `?debug` to the address) to see the collision shapes. Add `?tune` for
   sliders that change gravity, flipper speed, bounce and kick strength while you play.
@@ -34,6 +34,10 @@ Lessons from the first tables:
 - A saucer behind drop targets needs a funnel, a catch radius `R`, and targets that stay down
   (`resetDelay: null`), or it is almost never hit.
 - Side orbits should feed the inlanes, not the outlanes. Only use an outlane with a kickback.
+- Test an upper flipper with live balls fed down to it, not by cradling: it is usually angled so a ball
+  rolls straight off. Put its targets where its shots actually go (Race Day's shots go up and to the left).
+- Check what a shot reaches with a sweep: Race Day's first scoop spot by the left orbit was almost never
+  hit, because the ramp's funnel blocks every shot between the ramp and the orbit.
 
 ## 3. Rules
 
@@ -46,6 +50,8 @@ Rules are data: when something happens (`on`), check a condition (`if`), then do
 Triggers, conditions, actions, lamp groups and timed modes are listed at the top of `engine/rules.js`.
 `tables/funfair/config.js` has a full set: missions, locks and multiball, a jackpot, combos, a timed mode,
 an extra ball and a skill shot.
+`tables/raceday/config.js` adds a hurry-up, a mystery award, picking a horse with the flippers, a race run
+by the game (its horses are `toys`), add-a-ball and a super jackpot.
 
 ## 4. Instructions
 

@@ -78,21 +78,21 @@ export function buildPlayfield(cfg, art = {}) {
   // walls and rails
   const wm = mask(W, H);
   for (const w of cfg.walls ?? []) {
-    if (w.layer) continue;   // raised walls are drawn on the overlay
+    if (w.layer || w.id) continue;   // raised walls are drawn on the overlay; ones that move, as they are
     const rad = Math.max(1.2, w.r ?? 1);
     if (w.path) for (let i = 0; i + 1 < w.path.length; i++) wm.line(w.path[i], w.path[i + 1], rad);
     if (w.arc) wm.arc(w.arc.c, w.arc.R, w.arc.from * D, w.arc.to * D, rad);
   }
   for (const g of cfg.gates ?? []) wm.line(g.a, g.b, 0.8);
   for (const r of cfg.ramps ?? []) for (const [a, b] of r.funnelWalls ?? []) wm.line(a, b, 1.5);
-  for (const p of cfg.posts ?? []) wm.stamp(p.c[0], p.c[1], p.R + 0.5);
+  for (const p of cfg.posts ?? []) if (!p.id) wm.stamp(p.c[0], p.c[1], p.R + 0.5);
   wm.paint(ctx, col.wall, col.wallDark, col.wallHi ?? '#e4e8f2');
   // rubber kicking faces of the slings
   const rb = mask(W, H);
   for (const s of cfg.slings ?? []) rb.line(s.points[0], s.points[2], 1.6);
   rb.paint(ctx, col.rubber, '#777', null);
   // saucer holes and drop target slots are part of the playfield
-  for (const sc of cfg.saucers ?? []) { disc(ctx, sc.c[0], sc.c[1], 8, '#0a0c12', '#6a7080'); disc(ctx, sc.c[0], sc.c[1], 5, '#000', null); }
+  for (const sc of cfg.saucers ?? []) for (const c of sc.exit ? [sc.c, sc.exit] : [sc.c]) { disc(ctx, c[0], c[1], 8, '#0a0c12', '#6a7080'); disc(ctx, c[0], c[1], 5, '#000', null); }
   return { base: cv, overlay: buildOverlay(cfg) };
 }
 
@@ -242,6 +242,19 @@ export function drawDynamic(ctx, game, sprites, t) {
     disc(ctx, ins.c[0], ins.c[1], ins.r ?? 5, on ? c : shade(c, 0.28), on ? shade(c, 0.6) : '#15171c');
     if (ins.label) drawText(ctx, ins.label, ins.c[0] - 2, ins.c[1] - 3, on ? '#1a1206' : shade(c, 0.55));
   }
+  // posts and diverters that rise and fall: chrome when up, a dark socket when down
+  for (const w of [...(cfg.walls ?? []), ...(cfg.posts ?? [])]) if (w.id) {
+    const up = game.posts?.[w.id]?.up;
+    if (w.c) { if (up) { disc(ctx, w.c[0], w.c[1] + 1, w.R + 1, '#000', null); disc(ctx, w.c[0], w.c[1], w.R + 0.5, col.wall, col.wallDark); disc(ctx, w.c[0] - 1, w.c[1] - 1, 1, '#fff', null); } else disc(ctx, w.c[0], w.c[1], 2, '#05060a', col.wallDark); continue; }
+    for (let i = 0; i + 1 < (w.path?.length ?? 0); i++) thickLine(ctx, w.path[i], w.path[i + 1], up ? 2 : 1, up ? col.wall : 'rgba(0,0,0,0.6)');
+  }
+  // toys: pictures that move with the game (a race, a moving target)
+  for (const toy of cfg.toys ?? []) {
+    const at = toy.at(game, t), im = sprites.art?.[typeof toy.art === 'function' ? toy.art(game, t) : toy.art];
+    if (!at) continue;
+    if (im) ctx.drawImage(im, Math.round(at[0] - im.width / 2), Math.round(at[1] - im.height / 2));
+    else disc(ctx, at[0], at[1], 4, toy.colour ?? col.lamp, '#000');
+  }
   // drop targets: up, or a dark slot when down
   for (const bank of cfg.dropBanks ?? []) bank.targets.forEach(([a, b], i) => {
     const s = game.banks?.[bank.id]?.shapes[i]; const down = s?.disabled;
@@ -316,13 +329,19 @@ export function drawDynamic(ctx, game, sprites, t) {
     for (let k = y + 5; k < y + 40; k += 3) ctx.fillRect(x0 + 2, k, w - 4, 1);
   }
   for (const f of game.flippers) drawFlipper(ctx, f);
-  for (const b of game.world.balls) if (!b.layer) ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
+  for (const b of game.world.balls) if (!b.layer && !b.hidden) ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
   // ramps and wires over the playfield, then balls riding on them (with a shadow)
   if (sprites.overlay) ctx.drawImage(sprites.overlay, 0, 0);
   for (const b of game.world.balls) if (b.layer) {
     ctx.globalAlpha = 0.35; disc(ctx, b.x + 2, b.y + 3, b.r, '#000', null); ctx.globalAlpha = 1;
     ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
   }
+}
+
+function thickLine(ctx, a, b, w, colour) {
+  ctx.fillStyle = colour;
+  const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]));
+  for (let k = 0; k <= n; k++) ctx.fillRect(Math.round(a[0] + (b[0] - a[0]) * k / n - w / 2), Math.round(a[1] + (b[1] - a[1]) * k / n - w / 2), w, w);
 }
 
 // An unlit lamp picture: the same image, darkened (made once per image).

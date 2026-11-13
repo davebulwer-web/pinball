@@ -10,6 +10,8 @@
 //   flippers: [{ id, pivot, side, length, ... }]
 //   walls:    [{ path: [[x, y], ...] } | { arc: { c, R, from, to } }]   (degrees; plus r, bounce, friction, layer)
 //   posts:    [{ c, R }]
+//   walls and posts with an `id` can be raised and lowered by the rules (['post', id, 1 | 0]): diverters
+//               and up-posts. `down: true` starts them lowered.
 //   bumpers:  [{ id, c, R, kick, score }]
 //   slings:   [{ id, points: [A, B, C], kick, score }]          kicking face is A to C
 //   targets:  [{ id, a, b, score }]                             standups: solid, score when hit
@@ -18,6 +20,7 @@
 //   lanes:    [{ id, a, b, score }]                             rollovers (sensors)
 //   spinners: [{ id, a, b, score }]                             spin by the ball's speed, score per turn
 //   saucers:  [{ id, c, R, hold, eject: { dir, speed }, score }] catch the ball (centre within R + ball radius), then kick it out
+//               exit: [x, y] makes it a scoop with a subway: the ball vanishes and is kicked out at the exit
 //   kickbacks:[{ id, a, b, dir, speed }]                        fire the ball back out while lamp `id` is lit
 //   ramps:    [{ id, path, width, mouth, taper, layer, style: 'ramp' | 'wire', minSpeed, assist, score, funnel }]
 //               the ball enters at path[0] (going along the path) if fast enough, rides on its own layer
@@ -25,6 +28,7 @@
 //   gates:    [{ a, b, oneWay: [nx, ny] }]                      one-way walls
 //   inserts:  [{ id, c, r, label, colour, lit }]                lamps painted on the playfield (drawing only);
 //               lit(game) => 0 | 1 | 2 lights one from game state instead of lamp `id`
+//   toys:     [{ art, at: game => [x, y] | null }]            moving pictures placed by the game state (drawing only)
 //   rules, lampGroups, modes: see engine/rules.js. `script(game)` may return extra hooks for odd tables.
 
 import { World, Ball, STEP } from './physics.js';
@@ -57,6 +61,7 @@ export class Game {
     this.spin = {};                     // spinner id -> { angle, rate }
     this.banks = {};                    // drop bank id -> { shapes, resetAt }
     this.saucerBalls = new Map();       // ball -> { saucer, releaseAt }
+    this.posts = {};                    // raisable wall or post id -> { shapes, up }
     this.build();
     this.world.onHit = (b, s, impact, fired) => this.hit(b, s, impact, fired);
     this.world.onSensor = (b, s) => this.sensor(b, s);
@@ -75,12 +80,19 @@ export class Game {
   build() {
     const w = this.world, c = this.cfg;
     const mat = (o, d) => ({ r: o.r ?? d.r ?? 1, bounce: o.bounce ?? d.bounce, friction: o.friction ?? d.friction, layer: o.layer ?? 0 });
+    // a wall or post with an id can be raised and lowered by the rules
+    const raisable = (o, shape) => {
+      if (!o.id) return shape;
+      const p = (this.posts[o.id] ??= { shapes: [], up: !o.down, def: o });
+      shape.disabled = !p.up; p.shapes.push(shape);
+      return shape;
+    };
     for (const wall of c.walls ?? []) {
-      const m = mat(wall, { r: 1, bounce: 0.35 });
-      if (wall.path) for (let i = 0; i + 1 < wall.path.length; i++) w.add({ kind: 'seg', a: wall.path[i], b: wall.path[i + 1], ...m, tag: 'wall' });
-      if (wall.arc) w.add({ kind: 'arc', c: wall.arc.c, R: wall.arc.R, a0: wall.arc.from * D, a1: wall.arc.to * D, ...m, tag: 'wall' });
+      const m = { ...mat(wall, { r: 1, bounce: 0.35 }), ...(wall.oneWay ? { oneWay: wall.oneWay } : {}) };
+      if (wall.path) for (let i = 0; i + 1 < wall.path.length; i++) raisable(wall, w.add({ kind: 'seg', a: wall.path[i], b: wall.path[i + 1], ...m, tag: 'wall' }));
+      if (wall.arc) raisable(wall, w.add({ kind: 'arc', c: wall.arc.c, R: wall.arc.R, a0: wall.arc.from * D, a1: wall.arc.to * D, ...m, tag: 'wall' }));
     }
-    for (const p of c.posts ?? []) w.add({ kind: 'circle', c: p.c, R: p.R, bounce: p.bounce ?? 0.5, layer: p.layer ?? 0, tag: 'post' });
+    for (const p of c.posts ?? []) raisable(p, w.add({ kind: 'circle', c: p.c, R: p.R, bounce: p.bounce ?? 0.5, layer: p.layer ?? 0, tag: 'post' }));
     for (const b of c.bumpers ?? []) w.add({ kind: 'circle', c: b.c, R: b.R, bounce: 0.3, kick: b.kick ?? 420, kickMin: 0, id: b.id, tag: 'bumper', part: b });
     for (const s of c.slings ?? []) {
       const [A, B, C] = s.points;
@@ -138,12 +150,25 @@ export class Game {
   }
 
   // ---------- game flow ----------
+  // hold the ball in a saucer for longer (a rule can do this while the player picks something)
+  holdSaucer(id, secs) {
+    for (const h of this.saucerBalls.values()) if (h.saucer.id === id) h.releaseAt = Math.max(h.releaseAt, this.world.time + secs);
+  }
+  // a hurry-up mode's value now (0 if it isn't running)
+  hurryValue(id) {
+    const m = this.modes[id]; if (!m?.def.hurry) return 0;
+    const [from, to] = m.def.hurry, secs = m.def.secs ?? 20;
+    return Math.round((to + (from - to) * Math.max(0, m.left) / secs) / 10) * 10;
+  }
+  saucerHolding(id) { return [...this.saucerBalls.values()].some(h => h.saucer.id === id); }
+
   start(players = 1) {
     this.players = Array.from({ length: players }, (_, i) => ({ n: i + 1, score: 0, ball: 1, lamps: {}, counts: {}, locks: 0, bonus: 0, bonusX: 1, extra: 0 }));
     this.current = 0;
     this.world.balls.length = 0;
     this.modes = {}; this.timers = []; this.launchQueue = 0; this.saucerBalls.clear();
     for (const id of Object.keys(this.banks)) this.resetBank(id, true);
+    for (const [id, p] of Object.entries(this.posts)) this.setPost(id, !p.def.down);
     for (const [id, on] of Object.entries(this.cfg.startLamps ?? {})) for (const p of this.players) p.lamps[id] = on;
     this.script.start?.(this);
     this.emit('start', { players });
@@ -225,12 +250,25 @@ export class Game {
     if (!quiet) this.emit('bankReset', { id });
   }
 
+  // ---------- raisable posts and diverters ----------
+  // a post only rises when no ball is in the way (it would trap the ball); it tries again shortly
+  setPost(id, up) {
+    const p = this.posts[id]; if (!p) return;
+    p.want = up;
+    if (!up) { p.up = false; p.shapes.forEach(s => (s.disabled = true)); return; }
+    const clear = this.world.balls.every(b => p.shapes.every(s => this.world.distance(s, b) > b.r + 1));
+    if (clear) { p.up = true; p.shapes.forEach(s => (s.disabled = false)); }
+    else this.after(0.1, () => { if (p.want) this.setPost(id, true); });
+  }
+
   // ---------- player input ----------
   flip(side, down) {
+    let pressed = false;   // one press, however many flippers are on that side (an upper flipper too)
     for (const f of this.flippers) if (f.side === side) {
       const was = f.held; f.set(down && !this.tilted);
-      if (f.held && !was) { this.emit('flip', { side }); if (this.state === 'play' || this.state === 'ready') this.rules.flip(side); }
+      if (f.held && !was) pressed = true;
     }
+    if (pressed) { this.emit('flip', { side }); if (this.state === 'play' || this.state === 'ready') this.rules.flip(side); }
   }
   pull(p) { if (this.plunger && this.state !== 'over') this.plunger.setPull(p); }
   launch() {
@@ -292,6 +330,7 @@ export class Game {
       case 'saucer':
         if (this.saucerBalls.size && [...this.saucerBalls.values()].some(v => v.saucer === s)) return; // already full
         ball.held = true; ball.vx = ball.vy = 0; ball.x = s.c[0]; ball.y = s.c[1];
+        if (s.part.exit) { ball.hidden = true; ball.x = s.part.exit[0]; ball.y = s.part.exit[1]; }   // gone down the subway (the camera follows it to the exit)
         this.saucerBalls.set(ball, { saucer: s, releaseAt: this.world.time + (s.part.hold ?? 1.2) });
         this.trigger('saucer', s.id, s.part.score ?? 1000);
         break;
@@ -347,9 +386,12 @@ export class Game {
     for (const [b, h] of this.saucerBalls) if (t >= h.releaseAt) {
       const e = h.saucer.part.eject ?? { dir: [0, 1], speed: 300 };
       const l = Math.hypot(e.dir[0], e.dir[1]);
-      b.held = false; b.vx = e.dir[0] / l * e.speed + (Math.random() - 0.5) * 20; b.vy = e.dir[1] / l * e.speed;
-      const out = (h.saucer.R ?? 0) + b.r + 2;   // clear of the hole, so it isn't caught again
-      b.x += b.vx / e.speed * out; b.y += b.vy / e.speed * out;
+      b.held = false; b.hidden = false; b.vx = e.dir[0] / l * e.speed + (Math.random() - 0.5) * 20; b.vy = e.dir[1] / l * e.speed;
+      if (h.saucer.part.exit) { b.x = h.saucer.part.exit[0]; b.y = h.saucer.part.exit[1]; b.vx = e.dir[0] / l * e.speed; }   // up from the subway
+      else {
+        const out = (h.saucer.R ?? 0) + b.r + 2;   // clear of the hole, so it isn't caught again
+        b.x += b.vx / e.speed * out; b.y += b.vy / e.speed * out;
+      }
       this.saucerBalls.delete(b);
       this.emit('eject', { id: h.saucer.id });
     }
