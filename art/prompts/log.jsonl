@@ -162,3 +162,19 @@
 {"file": "tables/angryandy/art/src/lamp-plug.png", "size": [32, 32], "description": "electric power plug with a cable, simple icon", "seed": 931, "bg": false, "view": null}
 {"file": "tables/angryandy/art/src/lamp-band.png", "size": [32, 32], "description": "red rubber band, simple icon", "seed": 932, "bg": false, "view": null}
 {"file": "tables/angryandy/art/src/lamp-angry.png", "size": [32, 32], "description": "angry red face emoji with steam, simple icon", "seed": 933, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-glove.png", "size": [32, 32], "description": "a brown leather baseball glove", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/fielder.png", "size": [64, 64], "description": "a baseball outfielder in a navy blue cap and white uniform, reaching up with a brown leather glove, seen from the front, full body", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/stands.png", "size": [320, 200], "description": "top-down view of a baseball stadium: packed bleachers full of cheering fans with colourful shirts at the top, a padded dark green outfield wall with yellow line across, and bright green outfield grass with mowed stripes below, pixel art", "seed": 0, "bg": true, "view": null}
+{"file": "tables/grandslam/art/src/lamp-ump.png", "size": [32, 32], "description": "a black baseball umpire face mask", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/runner.png", "size": [32, 32], "description": "a tiny baseball player running, navy blue cap and white uniform, side view", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/diamond.png", "size": [320, 240], "description": "top-down view of a baseball infield diamond on green grass: brown dirt base paths forming a diamond, white square bases at the left, top and right corners, a round dirt pitcher's mound in the centre, white home plate in a dirt circle at the bottom, white chalk foul lines, pixel art", "seed": 0, "bg": true, "view": null}
+{"file": "tables/grandslam/art/src/lamp-xball.png", "size": [32, 32], "description": "a shiny golden baseball with sparkles", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/baseball.png", "size": [64, 64], "description": "a white baseball with red stitching, top down, round", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-ball.png", "size": [32, 32], "description": "a white baseball with red stitches", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-trophy.png", "size": [32, 32], "description": "a gold championship trophy cup", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-base.png", "size": [32, 32], "description": "a white square baseball base bag, top down", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-foam.png", "size": [32, 32], "description": "a big red foam finger hand pointing up", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-bat.png", "size": [32, 32], "description": "a wooden baseball bat, diagonal", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-star.png", "size": [32, 32], "description": "a bright yellow star", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-pennant.png", "size": [32, 32], "description": "a red triangular sports pennant flag on a stick", "seed": 0, "bg": false, "view": null}
+{"file": "tables/grandslam/art/src/lamp-hotdog.png", "size": [32, 32], "description": "a hot dog in a bun with yellow mustard", "seed": 0, "bg": false, "view": null}

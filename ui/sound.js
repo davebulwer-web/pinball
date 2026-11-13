@@ -3,7 +3,7 @@
 //   sound.load({ bumper: 'data:audio/ogg;base64,...', drain: 'sounds/drain.mp3' })
 // Names in use: flipper, bumper, sling, target, lane, knock, launch, drain, saved, nudge, danger, tilt,
 // start, over, award, drop, bankReset, spin, saucer, eject, kickback, rampEnter, ramp, bonusX, locked,
-// multiball, jackpot, extraBall, bonus, modeStart, modeEnd, and cap, gunshot, ricochet, whistle (the list is also in sound.names)
+// multiball, jackpot, extraBall, bonus, modeStart, modeEnd, and cap, gunshot, ricochet, whistle, bat (the list is also in sound.names)
 // Music: a table's `music` song (see below) plays as a chiptune loop during a game; a table can replace it
 // with an audio file the same way: sound.load({ music: 'sounds/theme.mp3' }), which then loops instead.
 
@@ -69,6 +69,8 @@ const synth = {
   modeEnd: () => [659, 554, 440].forEach((f, i) => tone(f, 0.1, { at: i * 0.08, vol: 0.05, type: 'triangle' })),
   highScore: () => [523, 659, 784, 1047, 1319, 1047, 1319].forEach((f, i) => tone(f, 0.1, { at: i * 0.1, vol: 0.06, type: 'triangle' })),
   // for the High Noon pistols: a cap-gun snap for each flip, a full shot, a ricochet, a train whistle
+  // for the Grand Slam bats: a wooden knock for each flip
+  bat: () => { noise(0.035, { vol: 0.12, freq: 1700 }); tone(190, 0.05, { type: 'triangle', vol: 0.1, slide: -60 }); },
   cap: () => { noise(0.04, { vol: 0.13, freq: 2600 }); tone(70, 0.05, { type: 'triangle', vol: 0.12 }); },
   gunshot: () => { noise(0.25, { vol: 0.3, freq: 700 }); noise(0.05, { vol: 0.2, freq: 3000 }); tone(60, 0.18, { type: 'triangle', vol: 0.18, slide: -30 }); },
   ricochet: () => tone(2400, 0.35, { type: 'sine', vol: 0.05, slide: -1600 }),

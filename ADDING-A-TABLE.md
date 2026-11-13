@@ -61,6 +61,8 @@ matrix with `status`, and two games played on the dot matrix (`game.video`) with
 space shooter on the dot matrix that its `script` tick moves along.
 `tables/holeinone/config.js` has `sand` and `wind` fields, a round of holes kept in the player's `counts`,
 and two more dot-matrix games.
+`tables/grandslam/config.js` has innings, outs and runners on base kept by the table (the runners are a `toys`
+entry that draws itself), and two more dot-matrix games.
 
 ## 4. Instructions
 
@@ -106,7 +108,7 @@ with `loadArt()` before starting the table. A table with no art needs no `art.js
 - `dmd: { rows: 32 }`: a dot matrix twice as tall (160 x 32 dots), for more detailed scenes and bigger
   letters. It takes 32 more pixels from the top of the screen. See `tables/highnoon/scenes.js`.
 - Flippers with `style: 'pistol'` are drawn as six-shooters with a muzzle flash; `flipSound: 'cap'` gives
-  them a cap-gun snap.
+  them a cap-gun snap. `style: 'bat'` draws baseball bats (Grand Slam), with `flipSound: 'bat'`.
 - `music`: a chiptune song written as notes (see `tables/funfair/music.js`).
 - `sounds`: swap any sound for an audio file, e.g. `sounds: { bumper: 'url or data URI', music: 'url' }`.
   The sound names are listed at the top of `ui/sound.js`.
