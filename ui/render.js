@@ -327,6 +327,26 @@ export function drawDynamic(ctx, game, sprites, t) {
     }
     disc(ctx, sp.a[0], sp.a[1], 1.5, '#777', null); disc(ctx, sp.b[0], sp.b[1], 1.5, '#777', null);
   }
+  // vortexes: dots spiralling in; magnets: rings that pulse inward while it is on
+  for (const f of cfg.fields ?? []) {
+    if (f.kind === 'vortex') {
+      const on = !f.lamp || game.lamps[f.lamp], sp = f.spin ?? 1;
+      for (let arm = 0; arm < 3; arm++) for (let k = 0; k < 14; k++) {
+        const r = f.R * (1 - k / 14), a = sp * (t * 2.2 + k * 0.35) + arm * 2.094;
+        ctx.globalAlpha = (on ? 0.85 : 0.35) * (1 - k / 18);
+        ctx.fillStyle = k > 10 ? '#ffffff' : k > 5 ? '#d08aff' : '#7a3ad8';
+        ctx.fillRect(Math.round(f.c[0] + Math.cos(a) * r), Math.round(f.c[1] + Math.sin(a) * r), 2, 2);
+      }
+      ctx.globalAlpha = 1; disc(ctx, f.c[0], f.c[1], 3, '#000', '#3a1a6a');
+    } else if (game.fieldOn?.[f.id] > t || [...(game.saucerBalls?.values() ?? [])].some(h => h.saucer.id === f.id)) {
+      for (let i = 0; i < 3; i++) {
+        const r = f.R * (1 - ((t * 1.5 + i / 3) % 1));
+        ctx.globalAlpha = 0.6 * (1 - r / f.R);
+        for (let a = 0; a < 6.28; a += 0.25) { ctx.fillStyle = '#fff36a'; ctx.fillRect(Math.round(f.c[0] + Math.cos(a) * r), Math.round(f.c[1] + Math.sin(a) * r), 1, 1); }
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
   // kickbacks: a small plunger at the bottom of the lane
   for (const k of cfg.kickbacks ?? []) {
     const fired = t - (game.flashes[k.id] ?? -9) < 0.15;
@@ -340,6 +360,7 @@ export function drawDynamic(ctx, game, sprites, t) {
     const lit = game.lamps[tg.id], fl = t - (game.flashes[tg.id] ?? -9) < 0.12;
     const im = sprites.art?.[tg.art];
     if (im) ctx.drawImage(im, Math.round((tg.a[0] + tg.b[0]) / 2 - im.width / 2 + (tg.artOffset?.[0] ?? 0)), Math.round((tg.a[1] + tg.b[1]) / 2 - im.height + (tg.artOffset?.[1] ?? 0) + (fl ? -1 : 0)));
+    if (im && tg.bar === false) continue;   // the picture is the target (Star Siege's mothership)
     ctx.strokeStyle = 'transparent';
     const n = Math.ceil(Math.hypot(tg.b[0] - tg.a[0], tg.b[1] - tg.a[1]));
     for (let k = 0; k <= n; k++) {

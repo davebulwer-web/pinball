@@ -57,6 +57,8 @@ drawn by a `toys` entry with a `draw` function, while a saucer holds the ball an
 bottom of the table. It also has a moving target (`move` on a target) and a captive ball (`captives`).
 `tables/cupfinal/config.js` has a goalkeeper (`move: { follow: true }`), a timed match shown on the dot
 matrix with `status`, and two games played on the dot matrix (`game.video`) with the flipper buttons.
+`tables/starsiege/config.js` has `fields`: a vortex (the black hole) and a magnet (the tractor beam), and a
+space shooter on the dot matrix that its `script` tick moves along.
 
 ## 4. Instructions
 

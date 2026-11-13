@@ -15,10 +15,16 @@
 //   bumpers:  [{ id, c, R, kick, score }]
 //   slings:   [{ id, points: [A, B, C], kick, score }]          kicking face is A to C
 //   targets:  [{ id, a, b, score }]                             standups: solid, score when hit
+//               art: a picture drawn on it (artOffset: [dx, dy]; bar: false leaves out the target strip)
 //               move: { by: [dx, dy], secs } makes a moving target: it slides to and fro by up to `by`
 //               either side, once every `secs` (game.targetAt(id) is where it is now)
 //               move: { follow: true, reach, speed, sight, secs } makes a goalkeeper: it slides across to get in
 //               front of a ball coming at it from below (within `sight` pixels), and paces about otherwise
+//   fields:   [{ id, kind: 'vortex' | 'magnet', c, R, strength, ... }]   forces on the ball (no collision)
+//               vortex: swirls a ball passing within R round the centre (spin: 1 clockwise, -1 anticlockwise);
+//               fires `field:id` as a ball enters it. lamp: 'id' makes it work only while that lamp is lit
+//               magnet: while switched on (['magnet', id, secs]) pulls a ball in, holds it for `hold` seconds
+//               (fires `magnet:id`), then throws it out along `eject: { dir, speed }`
 //   captives: [{ id, c }]                                       a captive ball: a ball that stays on the table,
 //               kept in its channel by walls with captiveOnly: true (which a ball in play passes through)
 //   dropBanks:[{ id, targets: [[a, b], ...], score, resetDelay }]  drop when hit; bankDown when all are down;
@@ -72,7 +78,8 @@ export class Game {
     this.nextLaunch = 0;
     this.spin = {};                     // spinner id -> { angle, rate }
     this.banks = {};                    // drop bank id -> { shapes, resetAt }
-    this.saucerBalls = new Map();       // ball -> { saucer, releaseAt }
+    this.saucerBalls = new Map();       // ball -> { saucer, releaseAt } (a magnet holds balls the same way)
+    this.fieldOn = {};                  // magnet id -> time it switches off
     this.posts = {};                    // raisable wall or post id -> { shapes, up }
     this.build();
     this.world.onHit = (b, s, impact, fired) => this.hit(b, s, impact, fired);
@@ -135,6 +142,37 @@ export class Game {
   }
   addCaptives() {
     for (const cb of this.cfg.captives ?? []) { const b = this.world.addBall(new Ball(cb.c[0], cb.c[1], this.cfg.ballRadius ?? 5)); b.captive = cb.id ?? true; }
+  }
+
+  // vortexes and magnets push the balls near them
+  pushFields() {
+    const t = this.world.time;
+    for (const f of this.cfg.fields ?? []) {
+      if (f.lamp && !this.lamps[f.lamp]) continue;
+      if (f.kind === 'magnet' && !(this.fieldOn[f.id] > t)) continue;
+      for (const b of this.world.balls) {
+        if (!this.inPlay(b) || b.held || b.layer !== 0) continue;
+        const dx = b.x - f.c[0], dy = b.y - f.c[1], d = Math.hypot(dx, dy);
+        const inside = d < f.R;
+        b.inField ??= {};
+        if (inside && !b.inField[f.id] && f.kind === 'vortex') this.trigger('field', f.id, f.score ?? 100);
+        b.inField[f.id] = inside;
+        if (!inside || d < 0.01) continue;
+        // (a vortex fades out towards its edge; a magnet pulls evenly, harder than gravity, so it can lift a ball)
+        const k = (f.strength ?? 1500) * (f.kind === 'magnet' ? 1 : 1 - d / f.R) * STEP, nx = dx / d, ny = dy / d;
+        if (f.kind === 'vortex') { const s = f.spin ?? 1; b.vx += -ny * s * k; b.vy += nx * s * k; }
+        else {
+          b.vx -= nx * k; b.vy -= ny * k;
+          b.vx *= 0.99; b.vy *= 0.99;   // damped, so it settles in
+          if (d < 6 && Math.hypot(b.vx, b.vy) < 450 && !this.saucerBalls.has(b)) {
+            b.held = true; b.vx = b.vy = 0; b.x = f.c[0]; b.y = f.c[1];
+            this.saucerBalls.set(b, { saucer: { id: f.id, R: 0, part: { eject: f.eject ?? { dir: [0, -1], speed: 600 } } }, releaseAt: t + (f.hold ?? 1) });
+            this.fieldOn[f.id] = 0;
+            this.trigger('magnet', f.id, f.score ?? 1000);
+          }
+        }
+      }
+    }
   }
 
   // moving targets slide to and fro
@@ -229,7 +267,7 @@ export class Game {
     this.current = 0;
     this.world.balls.length = 0;
     this.addCaptives();
-    this.modes = {}; this.timers = []; this.launchQueue = 0; this.saucerBalls.clear();
+    this.modes = {}; this.timers = []; this.launchQueue = 0; this.saucerBalls.clear(); this.fieldOn = {};
     for (const id of Object.keys(this.banks)) this.resetBank(id, true);
     for (const [id, p] of Object.entries(this.posts)) this.setPost(id, !p.def.down);
     for (const [id, on] of Object.entries(this.cfg.startLamps ?? {})) for (const p of this.players) p.lamps[id] = on;
@@ -435,6 +473,7 @@ export class Game {
 
   tick() {
     if (this.moving.length) this.moveTargets();
+    if (this.cfg.fields) this.pushFields();
     this.world.step();
     const t = this.world.time;
     // spinners turn down; each whole turn scores
