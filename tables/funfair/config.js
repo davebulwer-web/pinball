@@ -136,9 +136,9 @@ export default {
 
   // each mouth leans toward the opposite flipper, so the cross shots go straight in; funnels catch near misses
   ramps: [
-    { id: 'bigWheel', style: 'ramp', width: 20, mouth: 32, minSpeed: 300, assist: 700, score: 2000, funnel: [18, 10],
+    { id: 'bigWheel', style: 'ramp', width: 20, mouth: 30, minSpeed: 300, assist: 700, score: 2000, funnel: [16, 8],
       path: joinPath([[104, 352], [86, 306], [80, 270], [80, 150]], arcPts([62, 150], 18, 0, -180, 15), [[44, 150], [44, 414]]) },
-    { id: 'coaster', style: 'wire', width: 16, mouth: 30, minSpeed: 300, assist: 700, score: 1500, funnel: [18, 10],
+    { id: 'coaster', style: 'wire', width: 16, mouth: 28, minSpeed: 300, assist: 700, score: 1500, funnel: [16, 8],
       path: joinPath([[198, 352], [216, 306], [222, 270], [222, 124]], arcPts([240, 124], 18, 180, 360, 15), [[258, 124], [258, 414]]) },
   ],
   // the dodgems
@@ -154,7 +154,7 @@ export default {
   dropBanks: [
     { id: 'ducks', art: 'duck', score: 500, resetDelay: null, targets: [[duck(0), duck(0.22)], [duck(0.26), duck(0.48)], [duck(0.52), duck(0.74)], [duck(0.78), duck(1)]] },
   ],
-  saucers: [{ id: 'bigTop', c: [151, 268], R: 8, hold: 1.2, score: 1000, eject: { dir: [-0.3, 1], speed: 330 } }],
+  saucers: [{ id: 'bigTop', c: [151, 268], R: 10, hold: 1.2, score: 1000, eject: { dir: [-0.3, 1], speed: 330 } }],
   targets: [{ id: 'coconut', art: 'coconut', a: [236, 356], b: [248, 342], score: 500 }],
   spinners: [{ id: 'spinner', a: [10, 270], b: [36, 270], score: 100 }],
   kickbacks: [{ id: 'kbL', a: [21, 540], b: [33, 540], dir: [0, -1], speed: 950 }],
