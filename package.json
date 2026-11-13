@@ -6,6 +6,7 @@
   "description": "Pixel art pinball engine for the browser and phones, and the tables built on it",
   "scripts": {
     "build": "node build.mjs",
+    "build:dev": "node build.mjs --dev",
     "test": "node --test test/*.test.js"
   },
   "devDependencies": {

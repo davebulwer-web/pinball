@@ -206,13 +206,13 @@ export default {
     { path: [[208, 64], [208, 92]], r: 2 },
     { path: [[228, 64], [228, 92]], r: 2 },
     { path: [[248, 64], [248, 92]], r: 2 },
-    { path: [[268, 64], [268, 92]], r: 2 },
+    { path: [[268, 74], [268, 92]], r: 2 },   // (short, so a plunge can get over it)
   ],
   gates: [
     { a: [294, 200], b: [312, 188], oneWay: [0, -1] },
     { a: [9, 176], b: [37, 200], oneWay: [0, -1] },
     // on the top arc: a plunge bounces back into the A-C-E lanes; a ball from the Warp passes
-    { a: [160, 9], b: [162, 34], oneWay: [1, 0] },
+    { a: [235, 29], b: [237, 54], oneWay: [1, 0] },
   ],
 
   ramps: [

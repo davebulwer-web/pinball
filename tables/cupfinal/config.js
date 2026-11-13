@@ -258,14 +258,14 @@ export default {
     // C-U-P lane posts
     { path: [[228, 64], [228, 92]], r: 2 },
     { path: [[248, 64], [248, 92]], r: 2 },
-    { path: [[268, 64], [268, 92]], r: 2 },
+    { path: [[268, 74], [268, 92]], r: 2 },   // (short, so a plunge can get over it)
   ],
   posts: [{ c: [116, 126], R: 3 }, { c: [208, 126], R: 3 }],   // the goalposts
   gates: [
     { a: [294, 200], b: [312, 188], oneWay: [0, -1] },
     { a: [9, 176], b: [37, 200], oneWay: [0, -1] },
     // on the top arc: a plunge bounces back into the C-U-P lanes; a ball from the Wing passes
-    { a: [160, 9], b: [162, 34], oneWay: [1, 0] },
+    { a: [235, 29], b: [237, 54], oneWay: [1, 0] },
   ],
 
   ramps: [

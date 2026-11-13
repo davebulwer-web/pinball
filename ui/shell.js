@@ -1,6 +1,7 @@
 // The shared screen for every table: owns the canvas, scaling, the scrolling camera, touch and keyboard
 // input, the dot-matrix strip, sound, pause, the debug overlay (D key or ?debug) and the tuning panel
-// (?tune), and the screens between games: 1 to 4 players, high scores and name entry, and the way back
+// (?tune) in a developer build only (__DEV__, set by build.mjs --dev), and the screens between games: 1 to 4
+// players, high scores and name entry, and the way back
 // to the table menu. A table's page just calls startTable(config), or startTable(config, { art }) with
 // images from ui/art.js loadArt(). Pass onMenu to show a "< TABLES" button (the menu page passes one;
 // a single table page gets one that opens window.PINBALL_MENU, set by build.mjs). stop() ends the table.
@@ -31,7 +32,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
   sound.load(cfg.sounds);
   sound.setSong(cfg.music);
   const params = new URLSearchParams(location.search);
-  let debug = params.has('debug');
+  let debug = __DEV__ && params.has('debug');
   let paused = false, H = 480, camY = cfg.size[1], shakeUntil = 0, shakeDx = 0, touchSeen = false;
   let lastScore = load('lastScore', 0), overAt = -9;
   let help = -1;                                   // instructions page showing, or -1
@@ -212,7 +213,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     else if (c === 'ArrowRight') { ev.preventDefault(); game.nudge(1, -0.4); }
     else if (c === 'KeyP' || c === 'Escape') paused = !paused && game.state !== 'attract';
     else if (c === 'KeyM') sound.toggle();
-    else if (c === 'KeyD') debug = !debug;
+    else if (c === 'KeyD' && __DEV__) debug = !debug;
   };
   window.addEventListener('keydown', e => onKey(e, true), on);
   window.addEventListener('keyup', e => onKey(e, false), on);
@@ -265,12 +266,12 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
         nextEntry();
         if (!entry) showScores = { until: now + 5, place: -1 };
         break;
-      case 'lost': console.warn('ball escaped the table', e); break;
+      case 'lost': if (__DEV__) console.warn('ball escaped the table', e); break;
     }
   }
 
   // ---------- tuning panel (?tune) ----------
-  if (params.has('tune')) tuningPanel(game);
+  if (__DEV__ && params.has('tune')) tuningPanel(game);
 
   // ---------- loop ----------
   let last = performance.now(), now = 0, stopped = false;
@@ -334,8 +335,9 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
   }
   requestAnimationFrame(t => { last = t; frame(t); });
   const stop = () => { stopped = true; life.abort(); sound.stopMusic(); };
-  window.pinball = { game, dmd, sound, stop, scores: () => scores };   // handy in the browser console
-  return window.pinball;
+  const api = { game, dmd, sound, stop, scores: () => scores };
+  if (__DEV__) window.pinball = api;   // handy in the browser console
+  return api;
 }
 
 function drawPaused(ctx, H) {

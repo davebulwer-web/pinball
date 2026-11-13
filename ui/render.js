@@ -235,6 +235,29 @@ function drawFlipper(ctx, f) {
   disc(ctx, f.px, f.py, 1.6, '#999', null);
 }
 
+// A flipper drawn as a baseball bat (flipper style: 'bat'): the same shape as a flipper, in wood with a grain,
+// tape round the handle at the pivot and a knob on the end.
+function drawBat(ctx, f) {
+  const [tx, ty] = f.tip();
+  const x0 = Math.floor(Math.min(f.px, tx) - f.r1 - 3), x1 = Math.ceil(Math.max(f.px, tx) + f.r1 + 3);
+  const y0 = Math.floor(Math.min(f.py, ty) - f.r1 - 3), y1 = Math.ceil(Math.max(f.py, ty) + f.r1 + 3);
+  const dx = tx - f.px, dy = ty - f.py, L2 = dx * dx + dy * dy, L = Math.sqrt(L2);
+  for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) {
+    const px = i + 0.5, py = j + 0.5;
+    const raw = ((px - f.px) * dx + (py - f.py) * dy) / L2, t = raw < 0 ? 0 : raw > 1 ? 1 : raw;
+    const side = ((px - f.px) * dy - (py - f.py) * dx) / L;   // across the bat
+    const d = Math.hypot(px - f.px - dx * t, py - f.py - dy * t);
+    const rad = f.r1 + (f.r2 - f.r1) * t;
+    if (d > rad + 0.3) continue;
+    const tape = raw * L < 11;
+    const grain = (Math.floor(raw * L / 3) + Math.floor(side + 8)) % 5 === 0;
+    ctx.fillStyle = d > rad - 1 ? '#3a200c' : tape ? (Math.floor(raw * L) % 3 ? '#22222a' : '#4a4a58')
+      : side < -rad * 0.35 ? '#f2cf8a' : grain ? '#a8702e' : '#d9a256';
+    ctx.fillRect(i, j, 1, 1);
+  }
+  disc(ctx, f.px, f.py, f.r1 * 0.55, '#22222a', '#3a200c');   // the knob
+}
+
 // Light bulbs every `spacing` pixels along the config's `bulbs.paths` (worked out once per config).
 const bulbCache = new WeakMap();
 function bulbPoints(b) {
@@ -416,7 +439,7 @@ export function drawDynamic(ctx, game, sprites, t) {
     ctx.fillStyle = '#c8ccd6';
     for (let k = y + 5; k < y + 40; k += 3) ctx.fillRect(x0 + 2, k, w - 4, 1);
   }
-  for (const f of game.flippers) if (f.cfg.style === 'pistol') drawPistol(ctx, f, t, game.flashes[f.id]); else drawFlipper(ctx, f);
+  for (const f of game.flippers) if (f.cfg.style === 'pistol') drawPistol(ctx, f, t, game.flashes[f.id]); else if (f.cfg.style === 'bat') drawBat(ctx, f); else drawFlipper(ctx, f);
   for (const b of game.world.balls) if (!b.layer && !b.hidden) ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
   // ramps and wires over the playfield, then balls riding on them (with a shadow)
   if (sprites.overlay) ctx.drawImage(sprites.overlay, 0, 0);
