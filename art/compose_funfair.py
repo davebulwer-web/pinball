@@ -2,7 +2,7 @@
 #   playfield.png  the 320x640 backdrop: night skyline at the top, the Big Top plaza in the middle (its tent
 #                  centred on the Big Top saucer), the carousel at the bottom; joined with soft blends and
 #                  dimmed so the parts drawn over it stand out
-#   sprites        each source sprite cropped to its pixels
+#   sprites        each source sprite cropped to its pixels, and the lamp icons shrunk to insert size
 # Usage: python3 art/compose_funfair.py
 from PIL import Image, ImageEnhance
 import os
@@ -35,4 +35,15 @@ field.save(os.path.join(OUT, 'playfield.png'))
 
 for n in ['dodgem-red.png', 'dodgem-blue.png', 'dodgem-yellow.png', 'duck.png', 'coconut.png', 'ghost.png']:
     s = load(n); s.crop(s.getbbox()).save(os.path.join(OUT, n))
+
+# lamp icons: Pixellab's smallest image is 32px, so they are drawn at 32 and shrunk (box filter, then hard
+# alpha so the edges stay crisp) to fit the playfield inserts
+LAMPS = {'ticket': 16, 'tent': 16, 'coins': 16, 'xball': 16, 'car': 16, 'ghost': 16, 'buoy': 16, 'star': 16, 'arrow': 12, 'coco': 10}
+for n, size in LAMPS.items():
+    s = load(f'lamp-{n}.png'); s = s.crop(s.getbbox()); s.thumbnail((size, size), Image.BOX)
+    px = s.load()
+    for y in range(s.height):
+        for x in range(s.width):
+            r, g, b, a = px[x, y]; px[x, y] = (r, g, b, 255 if a > 110 else 0)
+    s.save(os.path.join(OUT, f'lamp-{n}.png'))
 print('ok')

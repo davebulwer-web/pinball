@@ -2,7 +2,7 @@
 // once from the same shapes the physics uses, so what you see is exactly where the ball goes. Moving
 // and lit parts (flippers, plunger, bumpers, lamps, balls) are drawn every frame.
 
-import { drawText } from './font.js';
+import { drawText, glyph } from './font.js';
 import { offsetPath } from '../engine/geom.js';
 
 const D = Math.PI / 180;
@@ -224,6 +224,7 @@ export function drawDynamic(ctx, game, sprites, t) {
   for (const l of cfg.lanes ?? []) {
     const cx = (l.a[0] + l.b[0]) / 2, cy = l.a[1] + 14;
     const lit = game.lamps[l.id];
+    if (l.marquee) { if (l.label) marquee(ctx, l.label, cx, cy + 6, lit === 1 || (lit === 2 && Math.floor(t * 5) % 2 === 0)); continue; }
     disc(ctx, cx, cy, 5, lit ? col.lamp : '#3b3420', lit ? '#a07010' : '#22201a');
     if (l.label) drawText(ctx, l.label, cx - 2, cy - 3, lit ? '#3a2400' : '#6d6450');
   }
@@ -231,6 +232,13 @@ export function drawDynamic(ctx, game, sprites, t) {
   for (const ins of cfg.inserts ?? []) {
     const v = ins.lit ? ins.lit(game) : game.lamps[ins.id], on = v === 1 || (v === 2 && Math.floor(t * 5) % 2 === 0);
     const c = ins.colour ?? col.lamp;
+    const im = sprites.art?.[ins.art];
+    if (im) {   // a picture lamp: full colour with a soft glow when lit, dark when not
+      if (on) { ctx.globalAlpha = 0.35; disc(ctx, ins.c[0], ins.c[1], Math.max(im.width, im.height) / 2 + 2, c, null); ctx.globalAlpha = 1; }
+      ctx.drawImage(on ? im : darkened(im), Math.round(ins.c[0] - im.width / 2), Math.round(ins.c[1] - im.height / 2));
+      continue;
+    }
+    if (ins.marquee) { marquee(ctx, ins.label, ins.c[0], ins.c[1], on); continue; }
     disc(ctx, ins.c[0], ins.c[1], ins.r ?? 5, on ? c : shade(c, 0.28), on ? shade(c, 0.6) : '#15171c');
     if (ins.label) drawText(ctx, ins.label, ins.c[0] - 2, ins.c[1] - 3, on ? '#1a1206' : shade(c, 0.55));
   }
@@ -314,6 +322,28 @@ export function drawDynamic(ctx, game, sprites, t) {
   for (const b of game.world.balls) if (b.layer) {
     ctx.globalAlpha = 0.35; disc(ctx, b.x + 2, b.y + 3, b.r, '#000', null); ctx.globalAlpha = 1;
     ctx.drawImage(sprites.ball, Math.round(b.x - b.r), Math.round(b.y - b.r));
+  }
+}
+
+// An unlit lamp picture: the same image, darkened (made once per image).
+const darkCache = new WeakMap();
+function darkened(im) {
+  if (!darkCache.has(im)) {
+    const [cv, c] = canvasOf(im.width, im.height);
+    c.drawImage(im, 0, 0);
+    c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(8,6,14,0.55)'; c.fillRect(0, 0, im.width, im.height);
+    darkCache.set(im, cv);
+  }
+  return darkCache.get(im);
+}
+
+// A letter made of light bulbs, like a fairground sign: each dot of the 5x7 font is a bulb, 2 pixels apart,
+// centred on (cx, cy).
+function marquee(ctx, ch, cx, cy, lit) {
+  const rows = glyph(ch), x0 = Math.round(cx - 4), y0 = Math.round(cy - 6);
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (rows[r] & (0x10 >> c)) {
+    ctx.fillStyle = lit ? '#ffcf4a' : '#7a5a24'; ctx.fillRect(x0 + c * 2, y0 + r * 2, 1, 1);
+    if (lit) { ctx.globalAlpha = 0.35; ctx.fillStyle = '#ffb020'; ctx.fillRect(x0 + c * 2 - 1, y0 + r * 2, 3, 1); ctx.fillRect(x0 + c * 2, y0 + r * 2 - 1, 1, 3); ctx.globalAlpha = 1; }
   }
 }
 

@@ -7,3 +7,13 @@
 {"file": "tables/funfair/art/src/carousel.png", "size": [320, 200], "description": "top-down view of a night fairground plaza, a red and gold merry-go-round carousel roof seen from above in the centre, dark purple cobblestones, golden string lights, scattered confetti, 16-bit pixel art", "seed": 105, "bg": true, "view": null}
 {"file": "tables/funfair/art/src/dodgem-yellow.png", "size": [32, 32], "description": "round yellow bumper car seen from above, red trim, rubber bumper ring, fairground dodgem", "seed": 103, "bg": false, "view": "high top-down"}
 {"file": "tables/funfair/art/src/dodgem-blue.png", "size": [32, 32], "description": "round blue bumper car seen from above, gold trim, rubber bumper ring, fairground dodgem", "seed": 103, "bg": false, "view": "high top-down"}
+{"file": "tables/funfair/art/src/lamp-coins.png", "size": [32, 32], "description": "small pile of shiny gold coins, simple icon", "seed": 213, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-coco.png", "size": [32, 32], "description": "brown hairy coconut, simple icon", "seed": 216, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-arrow.png", "size": [32, 32], "description": "bold red upward arrow, simple icon", "seed": 217, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-buoy.png", "size": [32, 32], "description": "red and white striped lifebuoy ring, simple icon", "seed": 219, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-star.png", "size": [32, 32], "description": "shiny gold five-pointed star, simple icon", "seed": 220, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-tent.png", "size": [32, 32], "description": "red and cream striped circus big top tent, simple icon", "seed": 212, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-xball.png", "size": [32, 32], "description": "glossy silver metal sphere with a bright white highlight and a small gold plus sign beside it, simple icon", "seed": 241, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-ticket.png", "size": [32, 32], "description": "orange paper raffle ticket with a perforated torn edge and a red star printed on it, simple icon", "seed": 233, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-car.png", "size": [32, 32], "description": "small red open roller coaster cart with yellow seats on a short piece of track, side view, simple icon", "seed": 232, "bg": false, "view": null}
+{"file": "tables/funfair/art/src/lamp-ghost.png", "size": [32, 32], "description": "cute white cartoon ghost, simple icon", "seed": 218, "bg": false, "view": null}
