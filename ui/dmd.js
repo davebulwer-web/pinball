@@ -1,13 +1,16 @@
-// The dot-matrix score strip across the top of the screen: 160 x 16 dots, two screen pixels per dot.
+// The dot-matrix score strip across the top of the screen: 160 dots wide and 16 tall (or 32 tall for a table
+// that sets dmd: { rows: 32 }, for more detailed pictures), two screen pixels per dot.
 // It shows the score, player and ball, and plays messages over them (`show`), which time out.
 // A message can be an animated scene: show(lines, { scene }) where scene(api, p, lines, t) draws one frame
-// with api = { set(x, y, v), text(s, x, y, { sc, align, v, clip: [x0, x1] }), W, H } and p running 0..1 over the message.
+// with api = { set(x, y, v), text(s, x, y, { sc, align, v, clip: [x0, x1] }), lines(lines, opts), W, H } and p running
+// 0..1 over the message. lines() writes one or two lines of a message centred, as large as they fit.
 
 import { glyph, commas } from './font.js';
 
-export const DMD_W = 160, DMD_H = 16;
+export const DMD_W = 160;
 
-export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52, 26, 8], bg = [16, 8, 4] } = {}) {
+export function createDmd({ rows = 16, on = [255, 150, 30], mid = [150, 80, 15], off = [52, 26, 8], bg = [16, 8, 4] } = {}) {
+  const DMD_H = rows, tall = rows >= 32;
   const dots = new Uint8Array(DMD_W * DMD_H);   // 0 off, 1 dim, 2 lit
   let img = null;
   const queue = [];                               // messages: { lines, big, until, blink }
@@ -27,7 +30,23 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
     }
   }
 
-  const api = { set, text, W: DMD_W, H: DMD_H };
+  // one or two lines, centred, each as large as fits (a tall display has room for double-size letters)
+  function lines(ls, { v = 2, clip = null, big = false } = {}) {
+    if (!Array.isArray(ls)) ls = [ls];
+    const fit = (s, max) => { for (let sc = max; sc > 1; sc--) if (width(s, sc) <= DMD_W) return sc; return 1; };
+    if (ls.length > 1) {
+      const half = DMD_H / 2;
+      ls.slice(0, 2).forEach((s, i) => {
+        const sc = tall ? fit(s, 2) : 1;
+        text(s, DMD_W / 2, i * half + Math.floor((half - 7 * sc) / 2) + (tall ? 0 : i), { sc, align: 'center', v, clip });
+      });
+    } else {
+      const sc = fit(ls[0], tall ? 3 : big ? 2 : 1);
+      text(ls[0], DMD_W / 2, Math.floor((DMD_H - 7 * sc) / 2), { sc, align: 'center', v, clip });
+    }
+  }
+
+  const api = { set, text, lines, W: DMD_W, H: DMD_H };
 
   // queue a message. lines: one or two strings; big: one line at double size
   function show(lines, { secs = 2, big = false, blink = false, scene = null } = {}) {
@@ -47,14 +66,7 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
     if (m) {
       const visible = !m.blink || Math.floor((t - m.start) * 6) % 2 === 0;
       if (visible) {
-        if (m.big || m.lines.length === 1) {
-          const s = m.lines[0];
-          const sc = width(s, 2) <= DMD_W ? 2 : 1;
-          text(s, DMD_W / 2, sc === 2 ? 1 : 4, { sc, align: 'center' });
-        } else {
-          text(m.lines[0], DMD_W / 2, 0, { align: 'center' });
-          text(m.lines[1], DMD_W / 2, 9, { align: 'center' });
-        }
+        lines(m.big ? [m.lines[0]] : m.lines, { big: true });
       }
       return;
     }
@@ -62,23 +74,24 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
     const s = state();
     if (s.entry) {
       const e = s.entry, blink = Math.floor(t * 3) % 3 === 2;
-      text(e.players > 1 ? `PLAYER ${e.player} HIGH SCORE` : 'NEW HIGH SCORE', DMD_W / 2, 0, { align: 'center' });
       const name = [...e.name].map((c, i) => (i === e.slot && blink ? ' ' : c === ' ' ? '_' : c)).join('');
-      text(`NAME ${name}`, DMD_W / 2, 9, { align: 'center' });
+      lines([e.players > 1 ? `PLAYER ${e.player} HIGH SCORE` : 'NEW HIGH SCORE', `NAME ${name}`]);
       return;
     }
     if (s.attract) {
       const phase = Math.floor(t / 2.5) % 4;
-      if (phase === 0) { text(s.title, DMD_W / 2, 0, { align: 'center' }); text(s.touch ? 'TAP TO PLAY' : 'PRESS SPACE', DMD_W / 2, 9, { align: 'center', v: Math.floor(t * 2) % 2 ? 2 : 1 }); }
-      else if (phase === 1 && s.champion) { text('HIGH SCORE', DMD_W / 2, 0, { align: 'center' }); text(`${s.champion[0]}  ${commas(s.champion[1])}`, DMD_W / 2, 9, { align: 'center' }); }
-      else if (phase === 2 || phase === 1) { text('LAST SCORE', DMD_W / 2, 0, { align: 'center' }); text(commas(s.lastScore ?? 0), DMD_W / 2, 9, { align: 'center' }); }
-      else { text('1 TO 4 PLAYERS', DMD_W / 2, 0, { align: 'center' }); text(s.touch ? 'RULES: TAP ?' : 'RULES: PRESS H', DMD_W / 2, 9, { align: 'center' }); }
+      if (phase === 0) { lines([s.title, '']); lines(['', s.touch ? 'TAP TO PLAY' : 'PRESS SPACE'], { v: Math.floor(t * 2) % 2 ? 2 : 1 }); }
+      else if (phase === 1 && s.champion) lines(['HIGH SCORE', `${s.champion[0]}  ${commas(s.champion[1])}`]);
+      else if (phase === 2 || phase === 1) lines(['LAST SCORE', commas(s.lastScore ?? 0)]);
+      else lines(['1 TO 4 PLAYERS', s.touch ? 'RULES: TAP ?' : 'RULES: PRESS H']);
       return;
     }
+    const low = DMD_H - 7;
     text(`P${s.player}`, 0, 0, { v: 1 });
-    if (s.mode) text(s.mode, 0, 9, { v: Math.floor(t * 4) % 2 ? 2 : 1 }); else text(`B${s.ball}`, 0, 9, { v: 1 });
+    if (s.mode) text(s.mode, 0, low, { v: Math.floor(t * 4) % 2 ? 2 : 1 }); else text(`B${s.ball}`, 0, low, { v: 1 });
     const sc = commas(s.score);
-    text(sc, DMD_W - 1, 1, { sc: width(sc, 2) <= DMD_W - 16 ? 2 : 1, align: 'right' });
+    const size = [tall ? 3 : 2, 2, 1].find(k => k === 1 || width(sc, k) <= DMD_W - 16);
+    text(sc, DMD_W - 1, Math.max(1, Math.floor((DMD_H - 7 * size) / 2)), { sc: size, align: 'right' });
   }
 
   // paint the dots into a w x h block of screen pixels (2x2 per dot, with a dark corner for the grid look)
@@ -97,5 +110,5 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
     ctx.putImageData(img, x0, y0);
   }
 
-  return { show, busy, frame, paint, clearQueue: () => (queue.length = 0) };
+  return { show, busy, frame, paint, clearQueue: () => (queue.length = 0), W: DMD_W, H: DMD_H, rows: DMD_H * 2 };
 }

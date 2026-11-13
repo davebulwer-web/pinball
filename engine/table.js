@@ -7,7 +7,7 @@
 //   size: [w, h], gravity, ballRadius, balls (per game), ballSave (seconds), drainY, maxBonusX
 //   lane: { x0, x1, yTop }                     the shooter lane (tells when a ball has been launched)
 //   plunger: { x0, x1, y, maxPull, minSpeed, maxSpeed }
-//   flippers: [{ id, pivot, side, length, ... }]
+//   flippers: [{ id, pivot, side, length, ... }]   style: 'pistol' draws a six-shooter (ui/render.js)
 //   walls:    [{ path: [[x, y], ...] } | { arc: { c, R, from, to } }]   (degrees; plus r, bounce, friction, layer)
 //   posts:    [{ c, R }]
 //   walls and posts with an `id` can be raised and lowered by the rules (['post', id, 1 | 0]): diverters
@@ -15,6 +15,10 @@
 //   bumpers:  [{ id, c, R, kick, score }]
 //   slings:   [{ id, points: [A, B, C], kick, score }]          kicking face is A to C
 //   targets:  [{ id, a, b, score }]                             standups: solid, score when hit
+//               move: { by: [dx, dy], secs } makes a moving target: it slides to and fro by up to `by`
+//               either side, once every `secs` (game.targetAt(id) is where it is now)
+//   captives: [{ id, c }]                                       a captive ball: a ball that stays on the table,
+//               kept in its channel by walls with captiveOnly: true (which a ball in play passes through)
 //   dropBanks:[{ id, targets: [[a, b], ...], score, resetDelay }]  drop when hit; bankDown when all are down;
 //               resetDelay: null keeps the bank down until a rule resets it
 //   lanes:    [{ id, a, b, score }]                             rollovers (sensors)
@@ -29,7 +33,10 @@
 //   inserts:  [{ id, c, r, label, colour, lit }]                lamps painted on the playfield (drawing only);
 //               lit(game) => 0 | 1 | 2 lights one from game state instead of lamp `id`
 //   toys:     [{ art, at: game => [x, y] | null }]            moving pictures placed by the game state (drawing only)
-//   rules, lampGroups, modes: see engine/rules.js. `script(game)` may return extra hooks for odd tables.
+//               or { draw(ctx, game, t, art) } for a toy that draws itself
+//   rules, lampGroups, modes: see engine/rules.js. `script(game)` may return extra hooks for odd tables
+//               ({ start, tick, or a trigger type such as ramp }). game.lookAt = y asks the screen to show that
+//               part of the table (High Noon's Quick Draw), null to follow the ball again.
 
 import { World, Ball, STEP } from './physics.js';
 import { Flipper } from './parts/flipper.js';
@@ -74,7 +81,9 @@ export class Game {
   get player() { return this.players[this.current]; }
   emit(type, data = {}) { this.events.push({ type, ...data }); }
   after(secs, fn) { this.timers.push({ at: this.world.time + secs, fn }); }
-  liveBalls() { return this.world.balls.filter(b => b.live).length; }
+  // balls in play (not a captive ball)
+  liveBalls() { return this.world.balls.filter(b => b.live && !b.captive).length; }
+  inPlay(b) { return b.live && !b.captive; }
 
   // ---------- building ----------
   build() {
@@ -88,7 +97,7 @@ export class Game {
       return shape;
     };
     for (const wall of c.walls ?? []) {
-      const m = { ...mat(wall, { r: 1, bounce: 0.35 }), ...(wall.oneWay ? { oneWay: wall.oneWay } : {}) };
+      const m = { ...mat(wall, { r: 1, bounce: 0.35 }), ...(wall.oneWay ? { oneWay: wall.oneWay } : {}), ...(wall.captiveOnly ? { captiveOnly: true } : {}) };
       if (wall.path) for (let i = 0; i + 1 < wall.path.length; i++) raisable(wall, w.add({ kind: 'seg', a: wall.path[i], b: wall.path[i + 1], ...m, tag: 'wall' }));
       if (wall.arc) raisable(wall, w.add({ kind: 'arc', c: wall.arc.c, R: wall.arc.R, a0: wall.arc.from * D, a1: wall.arc.to * D, ...m, tag: 'wall' }));
     }
@@ -100,7 +109,11 @@ export class Game {
       w.add({ kind: 'seg', a: B, b: C, r: 1, bounce: 0.5, tag: 'slingside' });
       w.add({ kind: 'seg', a: A, b: C, r: 1.5, bounce: s.bounce ?? 0.4, kick: s.kick ?? 260, kickMin: s.kickMin ?? 110, id: s.id, tag: 'sling', part: s });
     }
-    for (const t of c.targets ?? []) w.add({ kind: 'seg', a: t.a, b: t.b, r: 1.5, bounce: 0.45, id: t.id, tag: 'target', part: t, hitMin: 60 });
+    this.moving = [];
+    for (const t of c.targets ?? []) {
+      const s = w.add({ kind: 'seg', a: [...t.a], b: [...t.b], r: 1.5, bounce: 0.45, id: t.id, tag: 'target', part: t, hitMin: 60, ...(t.move ? { vel: [0, 0] } : {}) });
+      if (t.move) this.moving.push(s);
+    }
     for (const bank of c.dropBanks ?? []) {
       const shapes = bank.targets.map(([a, b], i) => w.add({ kind: 'seg', a, b, r: 1.5, bounce: 0.3, id: `${bank.id}:${i}`, tag: 'drop', bank: bank.id, part: bank, hitMin: 40 }));
       this.banks[bank.id] = { shapes, resetAt: null, def: bank };
@@ -113,6 +126,28 @@ export class Game {
     for (const r of c.ramps ?? []) this.buildRamp(r);
     this.flippers = (c.flippers ?? []).map(f => w.addPart(new Flipper(f)));
     this.plunger = c.plunger ? w.addPart(new Plunger(c.plunger)) : null;
+    this.addCaptives();
+  }
+  addCaptives() {
+    for (const cb of this.cfg.captives ?? []) { const b = this.world.addBall(new Ball(cb.c[0], cb.c[1], this.cfg.ballRadius ?? 5)); b.captive = cb.id ?? true; }
+  }
+
+  // moving targets slide to and fro
+  moveTargets() {
+    const t = this.world.time;
+    for (const s of this.moving) {
+      const m = s.part.move, w = (2 * Math.PI) / (m.secs ?? 4), k = Math.sin(t * w), dk = Math.cos(t * w) * w;
+      s.a[0] = s.part.a[0] + m.by[0] * k; s.a[1] = s.part.a[1] + m.by[1] * k;
+      s.b[0] = s.part.b[0] + m.by[0] * k; s.b[1] = s.part.b[1] + m.by[1] * k;
+      s.vel[0] = m.by[0] * dk; s.vel[1] = m.by[1] * dk;
+    }
+  }
+  // where a target is now: [a, b]
+  targetAt(id) {
+    const s = this.moving.find(x => x.id === id);
+    if (s) return [s.a, s.b];
+    const t = this.cfg.targets?.find(x => x.id === id);
+    return t ? [t.a, t.b] : null;
   }
 
   // A ramp or wire rail: two rails on its own layer, a lip on the playfield at the mouth that turns back
@@ -160,12 +195,17 @@ export class Game {
     const [from, to] = m.def.hurry, secs = m.def.secs ?? 20;
     return Math.round((to + (from - to) * Math.max(0, m.left) / secs) / 10) * 10;
   }
+  // let a held ball go now
+  releaseSaucer(id) {
+    for (const h of this.saucerBalls.values()) if (h.saucer.id === id) h.releaseAt = this.world.time;
+  }
   saucerHolding(id) { return [...this.saucerBalls.values()].some(h => h.saucer.id === id); }
 
   start(players = 1) {
     this.players = Array.from({ length: players }, (_, i) => ({ n: i + 1, score: 0, ball: 1, lamps: {}, counts: {}, locks: 0, bonus: 0, bonusX: 1, extra: 0 }));
     this.current = 0;
     this.world.balls.length = 0;
+    this.addCaptives();
     this.modes = {}; this.timers = []; this.launchQueue = 0; this.saucerBalls.clear();
     for (const id of Object.keys(this.banks)) this.resetBank(id, true);
     for (const [id, p] of Object.entries(this.posts)) this.setPost(id, !p.def.down);
@@ -209,7 +249,7 @@ export class Game {
   // a ball sitting in the shooter lane, ready for the plunger
   ballInLane() {
     const l = this.cfg.lane;
-    return this.world.balls.some(b => b.live && b.x > l.x0 && b.y > l.yTop);
+    return this.world.balls.some(b => this.inPlay(b) && b.x > l.x0 && b.y > l.yTop);
   }
 
   // ---------- locks and multiball ----------
@@ -268,7 +308,9 @@ export class Game {
       const was = f.held; f.set(down && !this.tilted);
       if (f.held && !was) pressed = true;
     }
-    if (pressed) { this.emit('flip', { side }); if (this.state === 'play' || this.state === 'ready') this.rules.flip(side); }
+    if (pressed) {
+      for (const f of this.flippers) if (f.side === side && f.held) this.flashes[f.id] = this.world.time;   // (a pistol's muzzle flash)
+      this.emit('flip', { side }); if (this.state === 'play' || this.state === 'ready') this.rules.flip(side); }
   }
   pull(p) { if (this.plunger && this.state !== 'over') this.plunger.setPull(p); }
   launch() {
@@ -369,6 +411,7 @@ export class Game {
   }
 
   tick() {
+    if (this.moving.length) this.moveTargets();
     this.world.step();
     const t = this.world.time;
     // spinners turn down; each whole turn scores
@@ -381,6 +424,7 @@ export class Game {
     // timers, modes, drop bank resets
     if (this.timers.length) for (const tm of [...this.timers]) if (t >= tm.at) { this.timers.splice(this.timers.indexOf(tm), 1); tm.fn(); }
     this.rules.tick(STEP);
+    this.script.tick?.();
     for (const [id, bank] of Object.entries(this.banks)) if (bank.resetAt !== null && t >= bank.resetAt) this.resetBank(id);
     // saucers kick their balls out
     for (const [b, h] of this.saucerBalls) if (t >= h.releaseAt) {
@@ -400,12 +444,12 @@ export class Game {
     if (this.launchQueue > 0 && t >= this.nextLaunch && this.autoLaunch()) { this.launchQueue--; this.nextLaunch = t + 1.2; }
     const c = this.cfg, l = c.lane;
     // launched: the ball has left the shooter lane
-    if (this.state === 'ready' && !this.ballInLane() && this.world.balls.some(b => b.live && b.y < l.yTop)) {
+    if (this.state === 'ready' && !this.ballInLane() && this.world.balls.some(b => this.inPlay(b) && b.y < l.yTop)) {
       this.state = 'play';
       if (this.saveArmed) { this.timeLeftSave = Math.max(this.timeLeftSave, c.ballSave ?? 6); this.saveArmed = false; this.emit('saveOn'); }
     }
     // a weak launch that fell back: the ball is back on the plunger and can be launched again
-    if (this.state === 'play' && this.launchQueue === 0 && this.world.balls.length && this.world.balls.every(b => !b.live || (b.x > l.x0 && b.y > l.yTop + 40))) this.state = 'ready';
+    if (this.state === 'play' && this.launchQueue === 0 && this.world.balls.length && this.world.balls.some(b => this.inPlay(b)) && this.world.balls.every(b => !this.inPlay(b) || (b.x > l.x0 && b.y > l.yTop + 40))) this.state = 'ready';
     if (this.timeLeftSave > 0) { this.timeLeftSave -= STEP; if (this.timeLeftSave <= 0) this.emit('saveOff'); }
     // drained balls
     const drainY = c.drainY ?? c.size[1] + 10;

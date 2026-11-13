@@ -6,7 +6,7 @@
 // a single table page gets one that opens window.PINBALL_MENU, set by build.mjs). stop() ends the table.
 //
 // Screen: 320 pixels wide. The height follows the window shape (480 to 600), so a phone in portrait is
-// filled; the top 32 rows are the dot-matrix strip and the rest is the view onto the playfield.
+// filled; the top 32 rows (64 for a table with a tall dot matrix) are the dot-matrix strip and the rest is the view onto the playfield.
 
 import { Game } from '../engine/table.js';
 import { buildPlayfield, ballSprite, drawDynamic, drawDebug } from './render.js';
@@ -17,7 +17,7 @@ import { helpPages, drawHelp, drawHelpButton, helpButton } from './help.js';
 import { loadScores, saveScores, qualifies, addScore } from './scores.js';
 import { LETTERS, inside, playerButtons, drawPlayerButtons, menuButton, drawMenuButton, drawScores, entryLayout, drawEntry } from './screens.js';
 
-const W = 320, DMD_ROWS = 32;
+const W = 320;
 
 export function startTable(cfg, { canvas = document.getElementById('screen'), art = {}, onMenu } = {}) {
   const life = new AbortController(), on = { signal: life.signal };   // every listener goes when the table stops
@@ -27,6 +27,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
   const { base: playfield, overlay } = buildPlayfield(cfg, art);
   const sprites = { ball: ballSprite(cfg.ballRadius ?? 5), overlay, art };
   const dmd = createDmd(cfg.dmd);
+  const DMD_ROWS = dmd.rows;                        // screen rows the dot matrix takes (32, or 64 for a tall one)
   sound.load(cfg.sounds);
   sound.setSong(cfg.music);
   const params = new URLSearchParams(location.search);
@@ -225,7 +226,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
   // ---------- events from the game ----------
   function handle(e) {
     switch (e.type) {
-      case 'flip': sound.play('flipper'); break;
+      case 'flip': sound.play(cfg.flipSound ?? 'flipper'); break;
       case 'bumper': case 'sling': case 'lane': case 'launch': case 'knock': case 'drop': case 'spin': case 'saucer':
       case 'eject': case 'kickback': case 'rampEnter': case 'ramp': case 'bankReset': case 'bonusX':
         sound.play(e.type, e); break;
@@ -284,9 +285,10 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
 
     // camera: keep the lowest ball in the lower part of the view, looking ahead a little
     const viewH = H - DMD_ROWS, maxCam = cfg.size[1] - viewH;
-    const live = game.world.balls.filter(b => b.live);
+    const live = game.world.balls.filter(b => game.inPlay(b));
     const focus = live.length ? live.reduce((a, b) => (b.y > a.y ? b : a)) : null;
     let target = focus ? focus.y - viewH * 0.6 + Math.max(-50, Math.min(50, focus.vy * 0.08)) : maxCam;
+    if (game.lookAt != null) target = game.lookAt - viewH * 0.6;   // the table wants to show something (a shootout)
     if (game.state === 'attract') target = maxCam * (0.5 + 0.5 * Math.sin(now * 0.25));
     target = Math.max(0, Math.min(maxCam, target));
     camY += (target - camY) * (1 - Math.exp(-dt * 7));
