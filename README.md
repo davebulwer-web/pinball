@@ -13,8 +13,9 @@ built into single HTML pages that work offline.
 | Star Siege | Space battle table with a tall dot matrix: an alien mothership that patrols the top behind three shield drop targets (knock them down, then hit it five times), the Dogfight (a space shooter on the dot matrix, flown with the flipper buttons), a black hole that swirls the ball round, a tractor beam that catches the ball and throws it at the mothership, Hyperspace ramp jumps, Hangar locks and Fleet Launch multiball, Event Horizon and Warp Speed |
 | Hole in One | Golf table with a tall dot matrix: a round of nine holes with par and yardage, where every shot is a stroke down the fairway (big shots save strokes) and the Cup at the top holes out, bunkers that slow the ball and cost a stroke, wind on some holes, two games played on the dot matrix with the flipper buttons (the Putting Green and the Long Drive), the Buggy Path ramp, TEE drop targets and 19th Hole multiball |
 | Grand Slam | Baseball table with a tall dot matrix and baseball bats for flippers: a nine-inning game against the Visitors, where the orbit is a single, the Strike Zone drop targets a double, the Bullpen scoop a triple and the Upper Deck ramp a home run. Runners go round the diamond above the flippers and score runs; outs come from the outfielder catching the ball, pop-ups and slingshot strikes. Grand slams, hitting for the cycle, the seventh inning stretch, World Series multiball, and two games on the dot matrix played with the flipper buttons (the Home Run Derby and the Diving Catch) |
-| Parts Test | Grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
-| Feel Test | Grey test table for tuning the ball, flippers, plunger and camera |
+| Grand Prix | Motor racing table with a tall dot matrix: six races at made-up circuits, five laps each, starting sixth on the grid. The Flyover and the Banking ramps cross over each other at the top of the table, and each is a lap and an overtake (two with DRS). Tyres wear out, so box at the Pit Lane for the Pit Stop game on the dot matrix; the Start Lights reaction game, fastest lap, championship points, Victory Lap multiball and a world championship |
+| Parts Test | Workshop table (developer build only): grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
+| Feel Test | Workshop table (developer build only): grey test table for tuning the ball, flippers, plunger and camera |
 
 ## Play
 
@@ -38,8 +39,12 @@ every so often while the table waits. The "< TABLES" button (or Esc) goes back t
 | Pause | Tap the score strip | P or Esc |
 
 Too many nudges in four seconds gives DANGER, then TILT (flippers die until the ball drains).
-M mutes, D shows the collision shapes. Add `?debug` to the page address to start with them shown,
-or `?tune` for sliders that change gravity, flipper speed, bounce and kick strength while you play.
+M mutes.
+
+The normal build (`npm run build`) is the one to publish: it has no developer tools. `npm run build:dev` adds
+them: the workshop tables (Parts Test and Feel Test) in the menu, D to show the collision shapes (or `?debug`
+in the page address to start with them shown), `?tune` for sliders that change gravity, flipper speed, bounce
+and kick strength while you play, and `window.pinball` in the browser console.
 
 ## Layout
 
@@ -64,14 +69,15 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 - `tables/funfair/`: also `art.js` (images to inline), `art/` (built images, with the Pixellab sources in `art/src/`),
   `scenes.js` (dot-matrix animations) and `music.js` (the theme tune)
 - `art/gen.py`: makes an image with Pixellab (needs `PIXELLAB_API_KEY`); every prompt and seed is logged in
-  `art/prompts/log.jsonl`. `art/compose_funfair.py`, `art/compose_raceday.py`, `art/compose_highnoon.py`, `art/compose_cupfinal.py`, `art/compose_starsiege.py`, `art/compose_holeinone.py`, `art/compose_fergus.py`, `art/compose_angryandy.py` and `art/compose_grandslam.py` join each table's backdrop panels and crop the sprites.
+  `art/prompts/log.jsonl`. `art/compose_funfair.py`, `art/compose_raceday.py`, `art/compose_highnoon.py`, `art/compose_cupfinal.py`, `art/compose_starsiege.py`, `art/compose_holeinone.py`, `art/compose_fergus.py`, `art/compose_angryandy.py`, `art/compose_grandslam.py` and `art/compose_grandprix.py` join each table's backdrop panels and crop the sprites.
 - `tables/index.js`: the list of tables, in menu order. Fergus and Angry Andy (team in-joke tables) are still in `tables/` with their tests, but are left out of the menu and the build: put them back in `tables/index.js` to build them again. [ADDING-A-TABLE.md](ADDING-A-TABLE.md) explains how to make a new one.
 - `previews.cjs`: takes each table's picture for the menu (`tables/<id>/preview.png`)
 - `test/`: headless physics and gameplay tests
 
 ## Commands (Node 18 or newer)
 
-- `npm install`, then `npm run build`: builds `dist/` (the menu, a page per table, and artifact pages)
+- `npm install`, then `npm run build`: builds `dist/` (the menu, a page per table, and artifact pages), ready to publish
+- `npm run build:dev`: the same with the developer tools and the workshop tables (don't publish this one)
 - `node previews.cjs`, then build again: updates the table pictures in the menu
 - `npm test`: physics, parts and rules tests, including long bot games that check no ball can escape or get stuck
 
@@ -149,4 +155,5 @@ A table's look is three layers, so the art always matches where the ball goes:
 10. A sixth table: Hole in One, with bunkers, wind, a round of golf and putting and driving games on the dot matrix
 11. A seventh table: Fergus - the Platonic Muppet, a team in-joke with a rhythm game on the dot matrix
 12. An eighth table: Angry Andy, a team in-joke about winding up the Head of IT, with a reaction game on the dot matrix
-13. Fergus and Angry Andy taken out of the menu; a ninth table (this): Grand Slam, baseball, with bat flippers, runners on the diamond, innings and two dot-matrix games
+13. Fergus and Angry Andy taken out of the menu; a ninth table: Grand Slam, baseball, with bat flippers, runners on the diamond, innings and two dot-matrix games
+14. Skill shots fixed on Cup Final, Star Siege and Hole in One; a tenth table (this): Grand Prix, motor racing, with crossover ramps; developer tools left out of the normal build, ready to publish

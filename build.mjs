@@ -5,15 +5,21 @@
 //   dist/<table>-artifact.html   one table, for publishing as a claude.ai artifact
 // Needs esbuild: `npm install`. Table pictures for the menu come from previews.cjs (run it after a build,
 // then build again).
+// This is the build to publish: no developer tools. `node build.mjs --dev` (npm run build:dev) also builds the
+// workshop tables (Parts Test, Feel Test) into the menu and turns on the collision view (D key or ?debug), the
+// tuning sliders (?tune) and window.pinball for the browser console.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import * as esbuild from 'esbuild';
-import { tables } from './tables/index.js';
+import { tables as allTables } from './tables/index.js';
+
+const DEV = process.argv.includes('--dev');
+const tables = allTables.filter(t => DEV || !t.workshop);
 
 // The Fruit Machine Arcade, when the two projects sit side by side (both checked out in one folder, or
 // both on GitHub Pages under one account). The menu links to it and the arcade links back here.
 const ARCADE_LINK = '../../fruitmachines/dist/index.html';
 
-const bundle = async entry => (await esbuild.build({ entryPoints: [entry], bundle: true, format: 'iife', minify: true, write: false, target: 'es2020' })).outputFiles[0].text;
+const bundle = async entry => (await esbuild.build({ entryPoints: [entry], bundle: true, format: 'iife', minify: true, write: false, target: 'es2020', define: { __DEV__: String(DEV) } })).outputFiles[0].text;
 const uri = f => 'data:image/png;base64,' + readFileSync(f).toString('base64');
 const fill = (tpl, { title, art = '', js }) => readFileSync(tpl, 'utf8')
   .replace('<!--TITLE-->', title)
@@ -47,4 +53,4 @@ writeFileSync('dist/pinball-artifact.html', fill('ui/lobby.html', { ...menu, art
 writeFileSync('dist/index.html', `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n${
   fill('ui/lobby.html', { ...menu, art: `window.ARCADE_LINK=${JSON.stringify(ARCADE_LINK)};${data}` })}`
   .replace('</style>', '</style></head><body>') + '</body></html>');
-console.log('built dist/index.html and dist/pinball-artifact.html');
+console.log(`built dist/index.html and dist/pinball-artifact.html${DEV ? ' (with developer tools)' : ''}`);

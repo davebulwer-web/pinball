@@ -10,7 +10,8 @@ Copy `tables/funfair/` or `tables/raceday/` to `tables/<your-id>/` (or `tables/p
 
 - In `config.js`, set `id` (the folder name), `name` and `tagline` (one line for the menu).
 - Add it to `tables/index.js`: import its config and put it in `tables`, in menu order.
-- Set `workshop: true` for a test table. It is listed under Workshop in the menu, with no picture.
+- Set `workshop: true` for a test table. It is listed under Workshop in the menu of a developer build
+  (`npm run build:dev`), with no picture, and left out of the normal build.
 
 ## 2. Layout (`config.js`)
 
@@ -22,7 +23,7 @@ whole table never has to fit on screen.
 - Each part has its own key: `flippers`, `plunger`, `bumpers`, `slings`, `targets`, `dropBanks`, `lanes`,
   `spinners`, `saucers`, `kickbacks`, `ramps`, `gates`, `inserts`, `toys`. All of their settings are listed at the
   top of `engine/table.js`. `tables/parts/config.js` uses every one of them.
-- Press D while playing (or add `?debug` to the address) to see the collision shapes. Add `?tune` for
+- In a developer build (`npm run build:dev`), press D while playing (or add `?debug` to the address) to see the collision shapes. Add `?tune` for
   sliders that change gravity, flipper speed, bounce and kick strength while you play.
 
 Lessons from the first tables:

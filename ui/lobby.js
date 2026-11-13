@@ -3,7 +3,10 @@
 // page works offline. Tables come from tables/index.js; pictures from previews.cjs (tables/<id>/preview.png).
 // A link to the table, such as index.html#funfair, opens it straight away.
 
-import { tables } from '../tables/index.js';
+import { tables as allTables } from '../tables/index.js';
+
+// the workshop tables are only in a developer build (build.mjs --dev)
+const tables = allTables.filter(t => __DEV__ || !t.workshop);
 import { startTable } from './shell.js';
 import { loadArt } from './art.js';
 import { bestScore } from './scores.js';
