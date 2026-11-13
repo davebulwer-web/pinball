@@ -61,9 +61,10 @@ export function createDmd({ on = [255, 150, 30], mid = [150, 80, 15], off = [52,
     // the normal score screen
     const s = state();
     if (s.attract) {
-      const phase = Math.floor(t / 2.5) % 2;
+      const phase = Math.floor(t / 2.5) % 3;
       if (phase === 0) { text(s.title, DMD_W / 2, 0, { align: 'center' }); text(s.touch ? 'TAP TO PLAY' : 'PRESS SPACE', DMD_W / 2, 9, { align: 'center', v: Math.floor(t * 2) % 2 ? 2 : 1 }); }
-      else { text('LAST SCORE', DMD_W / 2, 0, { align: 'center' }); text(commas(s.lastScore ?? 0), DMD_W / 2, 9, { align: 'center' }); }
+      else if (phase === 1) { text('LAST SCORE', DMD_W / 2, 0, { align: 'center' }); text(commas(s.lastScore ?? 0), DMD_W / 2, 9, { align: 'center' }); }
+      else { text('HOW TO PLAY', DMD_W / 2, 0, { align: 'center' }); text(s.touch ? 'TAP ? BELOW' : 'PRESS H', DMD_W / 2, 9, { align: 'center' }); }
       return;
     }
     text(`P${s.player}`, 0, 0, { v: 1 });
