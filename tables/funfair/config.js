@@ -188,6 +188,28 @@ export default {
     { id: 'save', c: [151, 508], art: 'lamp-buoy', colour: '#5aff8a', lit: g => (g.timeLeftSave > 0 ? 2 : 0) },
   ],
 
+  // the instructions screen (after the controls page): the goals, with the lamp that shows each one
+  instructions: [
+    { title: 'THE BIG TOP', items: [
+      { art: 'lamp-ticket', text: 'EACH RAMP, RAIL OR DUCK BANK LIGHTS A RIDE TICKET. FIVE TICKETS OPEN THE BIG TOP.' },
+      { art: 'lamp-tent', text: 'WHILE THE BIG TOP IS OPEN, SHOOT THROUGH THE DUCKS INTO IT TO LOCK A BALL. LOCK TWO TO START 3-BALL MULTIBALL.' },
+      { art: 'lamp-coins', text: 'IN MULTIBALL EVERY RAMP LIGHTS THE JACKPOT. COLLECT IT IN THE BIG TOP FOR 50,000.' },
+    ] },
+    { title: 'FAIRGROUND GAMES', items: [
+      { art: 'duck', text: "HOOK A DUCK: KNOCK DOWN ALL FOUR DUCKS. THEY STAY DOWN UNTIL A BALL GOES IN THE BIG TOP." },
+      { art: 'lamp-xball', text: 'THE FIRST HOOK A DUCK LIGHTS AN EXTRA BALL: COLLECT IT IN THE BIG TOP. AFTER THAT IT PAYS 5,000, 10,000 AND UP.' },
+      { art: 'lamp-car', text: 'COASTER COMBO: THE BIG WHEEL THEN THE ROLLERCOASTER WITHIN 5 SECONDS. 10,000, DOUBLING EACH TIME.' },
+      { art: 'lamp-coco', text: 'COCONUT SHY: HIT IT THREE TIMES TO RELIGHT THE KICKBACK.' },
+    ] },
+    { title: 'LANES AND RIDES', items: [
+      { art: 'lamp-star', text: 'SKILL SHOT: LAUNCH INTO THE LANE WITH THE LIT STAR FOR 10,000. THE FLIPPERS MOVE THE STAR.' },
+      { marquee: 'F', text: 'LIGHT F-U-N IN THE TOP LANES TO RAISE THE BONUS MULTIPLIER, UP TO X5.' },
+      { art: 'lamp-ghost', text: 'GHOST TRAIN: 20 SPINS IN THE LEFT LANE LIGHT IT. START IT IN THE BIG TOP FOR 30 SECONDS OF SPINNER X5.' },
+      { art: 'lamp-arrow', text: 'WHILE THE ARROW IS LIT, THE KICKBACK FIRES A BALL BACK OUT OF THE LEFT OUTLANE.' },
+      { art: 'lamp-buoy', text: 'BALL SAVE: WHILE THE LIFEBUOY FLASHES, A LOST BALL IS SERVED AGAIN.' },
+    ] },
+  ],
+
   startLamps: { kbL: 1 },
   lampGroups: {
     fun: { lamps: LANES, rotate: true, reset: true },

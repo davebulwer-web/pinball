@@ -339,7 +339,7 @@ function darkened(im) {
 
 // A letter made of light bulbs, like a fairground sign: each dot of the 5x7 font is a bulb, 2 pixels apart,
 // centred on (cx, cy).
-function marquee(ctx, ch, cx, cy, lit) {
+export function marquee(ctx, ch, cx, cy, lit) {
   const rows = glyph(ch), x0 = Math.round(cx - 4), y0 = Math.round(cy - 6);
   for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (rows[r] & (0x10 >> c)) {
     ctx.fillStyle = lit ? '#ffcf4a' : '#7a5a24'; ctx.fillRect(x0 + c * 2, y0 + r * 2, 1, 1);

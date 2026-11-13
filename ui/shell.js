@@ -11,6 +11,7 @@ import { buildPlayfield, ballSprite, drawDynamic, drawDebug } from './render.js'
 import { createDmd } from './dmd.js';
 import { sound } from './sound.js';
 import { commas, drawText } from './font.js';
+import { helpPages, drawHelp, drawHelpButton, helpButton } from './help.js';
 
 const W = 320, DMD_ROWS = 32;
 
@@ -26,6 +27,11 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
   let debug = params.has('debug');
   let paused = false, H = 480, camY = cfg.size[1], shakeUntil = 0, shakeDx = 0, touchSeen = false;
   let lastScore = load('lastScore', 0), overAt = -9;
+  let help = -1;                                   // instructions page showing, or -1
+  const isTouch = () => touchSeen || 'ontouchstart' in window;
+  const pages = () => helpPages(cfg, isTouch());
+  const helpOffered = () => game.state === 'attract' || game.state === 'over' || paused;
+  const turnHelp = d => { help += d; if (help < 0) help = 0; if (help >= pages().length) help = -1; };
 
   // ---------- sizing ----------
   function fit() {
@@ -62,6 +68,10 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     if (ev.pointerType === 'touch') touchSeen = true;
     ev.preventDefault();
     const r = canvas.getBoundingClientRect();
+    const cx = (ev.clientX - r.left) / r.width * W, cy = (ev.clientY - r.top) / r.height * H;
+    const b = helpButton(W, H), onButton = cx >= b.x - 6 && cy >= b.y - 6 && cx <= b.x + b.s + 4 && cy <= b.y + b.s + 4;
+    if (help >= 0) { if (onButton) help = -1; else turnHelp(cx < W / 2 ? -1 : 1); return; }
+    if (onButton && helpOffered()) { help = 0; return; }
     if (paused) { paused = false; return; }
     if (ev.clientY - r.top < (DMD_ROWS / H) * r.height && game.state !== 'attract' && game.state !== 'over') { paused = true; return; }
     if (startGame()) { pointers.set(ev.pointerId, { mode: 'none', type: ev.pointerType }); return; }
@@ -112,6 +122,16 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
       if (!ev[mod]) for (const k of codes) if (k !== c || !down) for (const side of ['left', 'right']) if (held[side].has(k)) setFlip(side, k, false);
     if (ev.repeat) { ev.preventDefault(); return; }
     sound.unlock();
+    if (help >= 0) {   // the instructions screen takes the keys while it is showing
+      if (keys[c]) { if (!down) setFlip(keys[c], c, false); ev.preventDefault(); return; }
+      if (!down) return;
+      ev.preventDefault();
+      if (c === 'ArrowLeft') turnHelp(-1);
+      else if (c === 'ArrowRight' || c === 'Enter') turnHelp(1);
+      else if (c === 'KeyH' || c === 'KeyI' || c === 'Escape' || c === 'Space') help = -1;
+      return;
+    }
+    if (down && (c === 'KeyH' || c === 'KeyI')) { if (game.state === 'play' || game.state === 'ready') paused = true; help = 0; return; }
     if (keys[c]) { ev.preventDefault(); if (!paused || !down) setFlip(keys[c], c, down); return; }
     if (c === 'Space' || c === 'Enter' || c === 'ArrowDown') {
       ev.preventDefault();
@@ -210,14 +230,18 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
     ctx.restore();
     dmd.frame(now, () => ({
       attract: game.state === 'attract' || (game.state === 'over' && !dmd.busy()),
-      title: cfg.name.toUpperCase(), touch: touchSeen || 'ontouchstart' in window, lastScore,
+      title: cfg.name.toUpperCase(), touch: isTouch(), lastScore,
       player: game.player?.n ?? 1, ball: game.player?.ball ?? 1, score: game.player?.score ?? 0,
       mode: Object.values(game.modes).map(m => `${Math.ceil(m.left)}`)[0],
     }));
     dmd.paint(ctx, 0, 0);
-    if (paused) {
-      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, DMD_ROWS, W, viewH);
-      drawPaused(ctx, H);
+    if (help >= 0) drawHelp(ctx, pages(), help, sprites.art, { W, top: DMD_ROWS, h: viewH, touch: isTouch(), t: now });
+    else {
+      if (paused) {
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, DMD_ROWS, W, viewH);
+        drawPaused(ctx, H);
+      }
+      if (helpOffered()) drawHelpButton(ctx, W, H);
     }
     requestAnimationFrame(frame);
   }
@@ -229,6 +253,7 @@ export function startTable(cfg, { canvas = document.getElementById('screen'), ar
 function drawPaused(ctx, H) {
   drawText(ctx, 'PAUSED', W / 2, H / 2 - 20, '#fff', { scale: 3, align: 'center' });
   drawText(ctx, 'TAP OR PRESS P TO PLAY', W / 2, H / 2 + 10, '#ccc', { align: 'center' });
+  drawText(ctx, 'RULES: H OR THE ? BUTTON', W / 2, H / 2 + 24, '#ccc', { align: 'center' });
 }
 
 function load(k, d) { try { const v = localStorage.getItem('pinball.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } }
