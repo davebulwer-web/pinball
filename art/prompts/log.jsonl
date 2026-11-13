@@ -82,3 +82,23 @@
 {"file": "tables/cupfinal/art/src/lamp-star.png", "size": [32, 32], "description": "gold star, simple icon", "seed": 533, "bg": false, "view": null}
 {"file": "tables/cupfinal/art/src/ball.png", "size": [32, 32], "description": "white association football soccer ball with black pentagon patches seen from directly above, round, simple sprite", "seed": 541, "bg": false, "view": null}
 {"file": "tables/cupfinal/art/src/lamp-ball.png", "size": [32, 32], "description": "white soccer ball with black pentagon patches, round, simple icon", "seed": 542, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/nebula.png", "size": [320, 220], "description": "deep space with a purple and blue nebula, scattered bright stars, a huge ringed gas giant planet at the edge, 16-bit pixel art", "seed": 601, "bg": true, "view": null}
+{"file": "tables/starsiege/art/src/station.png", "size": [320, 220], "description": "top-down view of the metal deck of a space station hangar, grey panels with yellow and black hazard stripes, glowing blue lights, 16-bit pixel art", "seed": 603, "bg": true, "view": null}
+{"file": "tables/starsiege/art/src/fleet.png", "size": [320, 240], "description": "deep space battle seen from above, distant grey star cruisers and laser bolts, dark blue space with stars and a glowing orange nebula cloud, 16-bit pixel art", "seed": 602, "bg": true, "view": null}
+{"file": "tables/starsiege/art/src/fighter.png", "size": [32, 32], "description": "small white and blue space fighter ship seen from above pointing up, simple sprite", "seed": 612, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/asteroid.png", "size": [32, 32], "description": "round grey space asteroid rock with craters seen from above, simple sprite", "seed": 611, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/mothership.png", "size": [48, 32], "description": "alien mothership seen from above, wide dark green saucer with glowing red lights and a domed centre, simple sprite", "seed": 610, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/alien.png", "size": [32, 32], "description": "small purple alien fighter ship seen from above pointing down, simple sprite", "seed": 613, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-planet.png", "size": [32, 32], "description": "small ringed orange planet, simple icon", "seed": 620, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-rocket.png", "size": [32, 32], "description": "red and white rocket, simple icon", "seed": 621, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-star.png", "size": [32, 32], "description": "bright white and yellow star burst, simple icon", "seed": 624, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-laser.png", "size": [32, 32], "description": "red laser gun blaster, simple icon", "seed": 623, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-shield.png", "size": [32, 32], "description": "glowing blue energy shield badge, simple icon", "seed": 622, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-medal.png", "size": [32, 32], "description": "gold space medal shaped like a star on a blue ribbon, simple icon", "seed": 627, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-hole.png", "size": [32, 32], "description": "swirling purple black hole vortex, simple icon", "seed": 626, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-alien.png", "size": [32, 32], "description": "green alien head with big black eyes, simple icon", "seed": 625, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-fuel.png", "size": [32, 32], "description": "glowing green fuel cell canister, simple icon", "seed": 629, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-xball.png", "size": [32, 32], "description": "glossy silver metal sphere with a bright white highlight and a small gold plus sign beside it, simple icon", "seed": 628, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-beam.png", "size": [32, 32], "description": "yellow tractor beam cone of light, simple icon", "seed": 630, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-moon.png", "size": [32, 32], "description": "small grey cratered moon, simple icon", "seed": 631, "bg": false, "view": null}
+{"file": "tables/starsiege/art/src/lamp-earth.png", "size": [32, 32], "description": "small blue and green planet earth, simple icon", "seed": 632, "bg": false, "view": null}

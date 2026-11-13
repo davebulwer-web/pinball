@@ -3,7 +3,7 @@
 //
 // Every scoring event in the game is a trigger, named `type:id` (and also plain `type`):
 //   lane:laneF  hit:tgt1  bumper:bump1  sling:slingL  drop:ducks  bankDown:ducks  spin:spinR
-//   saucer:hole  ramp:bigWheel (ball made it to the end)  rampFail:bigWheel  kickback:kbL
+//   saucer:hole  field:vortex (a ball enters it)  magnet:beam (it caught a ball)  ramp:bigWheel (ball made it to the end)  rampFail:bigWheel  kickback:kbL
 //   complete:fun (every lamp of a lamp group lit)  start  serve  drain  multiballStart  multiballEnd
 //   modeStart:frenzy  modeEnd:frenzy  collect:hurry  flip:left  flip:right (a flipper button pressed)
 //   and any name fired by an `event` action.
@@ -27,6 +27,7 @@
 //   ['mode', 'id']  ['endMode', 'id']          modes come from config.modes
 //   ['event', 'name']                           fire another trigger (chains rules)
 //   ['post', 'id', 1 | 0]                       raise or lower a post or diverter (walls and posts with an id)
+//   ['magnet', 'id', secs]                      switch a magnet on (it switches off once it has caught a ball)
 //   ['hold', 'saucerId', secs]                  keep the ball in a saucer longer (to pick something with the flippers)
 //   ['addBall', n]                              add balls to a multiball in play
 //   ['collect', 'modeId', 'TEXT']               score a hurry-up mode's value now, and end it
@@ -111,6 +112,7 @@ export class Rules {
         case 'endMode': this.endMode(x); break;
         case 'event': this.fire(x); break;
         case 'post': g.setPost(x, !!y); break;
+        case 'magnet': g.fieldOn[x] = g.world.time + (y ?? 10); break;
         case 'hold': g.holdSaucer(x, y); break;
         case 'addBall': g.launchQueue += x ?? 1; g.nextLaunch = Math.min(g.nextLaunch, g.world.time + 0.5); g.emit('addBall'); break;
         case 'collect': {

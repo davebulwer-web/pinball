@@ -73,6 +73,8 @@ const synth = {
   gunshot: () => { noise(0.25, { vol: 0.3, freq: 700 }); noise(0.05, { vol: 0.2, freq: 3000 }); tone(60, 0.18, { type: 'triangle', vol: 0.18, slide: -30 }); },
   ricochet: () => tone(2400, 0.35, { type: 'sine', vol: 0.05, slide: -1600 }),
   whistle: () => [0, 0.45].forEach(at => { tone(587, 0.4, { at, vol: 0.03, type: 'triangle' }); tone(740, 0.4, { at, vol: 0.03, type: 'triangle' }); tone(880, 0.4, { at, vol: 0.02, type: 'square' }); }),
+  laser: () => tone(1800, 0.08, { type: 'square', vol: 0.015, slide: -1400 }),
+  boom: () => { noise(0.7, { vol: 0.3, freq: 220 }); tone(55, 0.6, { type: 'triangle', vol: 0.15, slide: -30 }); },
   award: () => [660, 880, 1100, 1320].forEach((f, i) => tone(f, 0.07, { at: i * 0.06, vol: 0.05 })),
 };
 
