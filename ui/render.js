@@ -338,7 +338,23 @@ export function drawDynamic(ctx, game, sprites, t) {
         ctx.fillRect(Math.round(f.c[0] + Math.cos(a) * r), Math.round(f.c[1] + Math.sin(a) * r), 2, 2);
       }
       ctx.globalAlpha = 1; disc(ctx, f.c[0], f.c[1], 3, '#000', '#3a1a6a');
-    } else if (game.fieldOn?.[f.id] > t || [...(game.saucerBalls?.values() ?? [])].some(h => h.saucer.id === f.id)) {
+    } else if (f.kind === 'sand') {
+      // a bunker: raked sand, unless the backdrop already has one (draw: false)
+      if (f.draw === false) continue;
+      disc(ctx, f.c[0], f.c[1], f.R, '#e8d39a', '#c8ac68');
+      ctx.fillStyle = '#c8ac68';
+      for (let y = -f.R + 4; y < f.R - 2; y += 4) { const w = Math.sqrt(f.R * f.R - y * y) - 3; for (let x = -w; x < w; x += 3) ctx.fillRect(Math.round(f.c[0] + x), Math.round(f.c[1] + y), 2, 1); }
+    } else if (f.kind === 'wind') {
+      // wind: streaks blowing across while it's on
+      if (f.lamp && !game.lamps[f.lamp]) continue;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      for (let i = 0; i < 12; i++) {
+        const along = ((t * 90 + i * 37) % (2 * f.R)) - f.R, across = ((i * 53) % (2 * f.R)) - f.R;
+        const x = f.c[0] + f.dir[0] * along - f.dir[1] * across, y = f.c[1] + f.dir[1] * along + f.dir[0] * across;
+        if (Math.hypot(x - f.c[0], y - f.c[1]) > f.R) continue;
+        for (let k = 0; k < 6; k++) ctx.fillRect(Math.round(x - f.dir[0] * k), Math.round(y - f.dir[1] * k), 1, 1);
+      }
+    } else if (f.kind === 'magnet' && (game.fieldOn?.[f.id] > t || [...(game.saucerBalls?.values() ?? [])].some(h => h.saucer.id === f.id))) {
       for (let i = 0; i < 3; i++) {
         const r = f.R * (1 - ((t * 1.5 + i / 3) % 1));
         ctx.globalAlpha = 0.6 * (1 - r / f.R);

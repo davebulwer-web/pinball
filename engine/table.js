@@ -20,11 +20,14 @@
 //               either side, once every `secs` (game.targetAt(id) is where it is now)
 //               move: { follow: true, reach, speed, sight, secs } makes a goalkeeper: it slides across to get in
 //               front of a ball coming at it from below (within `sight` pixels), and paces about otherwise
-//   fields:   [{ id, kind: 'vortex' | 'magnet', c, R, strength, ... }]   forces on the ball (no collision)
+//   fields:   [{ id, kind: 'vortex' | 'magnet' | 'sand' | 'wind', c, R, strength, ... }]   forces on the ball (no collision)
 //               vortex: swirls a ball passing within R round the centre (spin: 1 clockwise, -1 anticlockwise);
 //               fires `field:id` as a ball enters it. lamp: 'id' makes it work only while that lamp is lit
 //               magnet: while switched on (['magnet', id, secs]) pulls a ball in, holds it for `hold` seconds
 //               (fires `magnet:id`), then throws it out along `eject: { dir, speed }`
+//               sand: a bunker that slows a ball rolling through it (drag: the share of speed lost a second, about);
+//               fires `field:id` as a ball enters it
+//               wind: pushes a ball within R along `dir` (a unit vector) with `strength` (best with a lamp)
 //   captives: [{ id, c }]                                       a captive ball: a ball that stays on the table,
 //               kept in its channel by walls with captiveOnly: true (which a ball in play passes through)
 //   dropBanks:[{ id, targets: [[a, b], ...], score, resetDelay }]  drop when hit; bankDown when all are down;
@@ -155,9 +158,12 @@ export class Game {
         const dx = b.x - f.c[0], dy = b.y - f.c[1], d = Math.hypot(dx, dy);
         const inside = d < f.R;
         b.inField ??= {};
-        if (inside && !b.inField[f.id] && f.kind === 'vortex') this.trigger('field', f.id, f.score ?? 100);
+        if (inside && !b.inField[f.id] && (f.kind === 'vortex' || f.kind === 'sand')) this.trigger('field', f.id, f.score ?? 100);
         b.inField[f.id] = inside;
-        if (!inside || d < 0.01) continue;
+        if (!inside) continue;
+        if (f.kind === 'sand') { const k = Math.max(0, 1 - (f.drag ?? 3) * STEP); b.vx *= k; b.vy *= k; continue; }
+        if (f.kind === 'wind') { b.vx += f.dir[0] * (f.strength ?? 400) * STEP; b.vy += f.dir[1] * (f.strength ?? 400) * STEP; continue; }
+        if (d < 0.01) continue;
         // (a vortex fades out towards its edge; a magnet pulls evenly, harder than gravity, so it can lift a ball)
         const k = (f.strength ?? 1500) * (f.kind === 'magnet' ? 1 : 1 - d / f.R) * STEP, nx = dx / d, ny = dy / d;
         if (f.kind === 'vortex') { const s = f.spin ?? 1; b.vx += -ny * s * k; b.vy += nx * s * k; }

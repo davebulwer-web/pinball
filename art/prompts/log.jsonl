@@ -102,3 +102,22 @@
 {"file": "tables/starsiege/art/src/lamp-beam.png", "size": [32, 32], "description": "yellow tractor beam cone of light, simple icon", "seed": 630, "bg": false, "view": null}
 {"file": "tables/starsiege/art/src/lamp-moon.png", "size": [32, 32], "description": "small grey cratered moon, simple icon", "seed": 631, "bg": false, "view": null}
 {"file": "tables/starsiege/art/src/lamp-earth.png", "size": [32, 32], "description": "small blue and green planet earth, simple icon", "seed": 632, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/course.png", "size": [320, 240], "description": "top-down view of a golf course fairway with mown stripes, white sand bunkers, a blue pond and dark green trees along the edges, 16-bit pixel art", "seed": 701, "bg": true, "view": null}
+{"file": "tables/holeinone/art/src/clubhouse.png", "size": [320, 200], "description": "top-down view of a golf clubhouse terrace with paving stones, flower beds and parked golf buggies, 16-bit pixel art", "seed": 703, "bg": true, "view": null}
+{"file": "tables/holeinone/art/src/green.png", "size": [320, 220], "description": "top-down view of a smooth golf putting green with a hole and a red flag, surrounded by sand bunkers and a ring of trees, 16-bit pixel art", "seed": 702, "bg": true, "view": null}
+{"file": "tables/holeinone/art/src/ball.png", "size": [32, 32], "description": "white dimpled golf ball, simple sprite", "seed": 711, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/flag.png", "size": [32, 32], "description": "red golf flag on a white pole in a hole, simple sprite", "seed": 712, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/tree.png", "size": [32, 32], "description": "round leafy green tree seen from above, simple sprite", "seed": 710, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/buggy.png", "size": [32, 32], "description": "small white golf buggy cart seen from above, simple sprite", "seed": 713, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-club.png", "size": [32, 32], "description": "silver golf club driver, simple icon", "seed": 720, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-trophy.png", "size": [32, 32], "description": "gold trophy cup, simple icon", "seed": 721, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-eagle.png", "size": [32, 32], "description": "brown eagle head, simple icon", "seed": 724, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-tee.png", "size": [32, 32], "description": "wooden golf tee with a white ball on it, simple icon", "seed": 722, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-bird.png", "size": [32, 32], "description": "small cute blue bird, simple icon", "seed": 723, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-house.png", "size": [32, 32], "description": "small white clubhouse building with a red roof, simple icon", "seed": 727, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-flag.png", "size": [32, 32], "description": "red golf flag on a pole, simple icon", "seed": 726, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-wind.png", "size": [32, 32], "description": "white cloud blowing wind with swirls, simple icon", "seed": 725, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-xball.png", "size": [32, 32], "description": "glossy white golf ball with a small gold plus sign beside it, simple icon", "seed": 728, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-star.png", "size": [32, 32], "description": "bright yellow star, simple icon", "seed": 730, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-sand.png", "size": [32, 32], "description": "small pile of golden sand with a rake, simple icon", "seed": 731, "bg": false, "view": null}
+{"file": "tables/holeinone/art/src/lamp-card.png", "size": [32, 32], "description": "golf scorecard with a small pencil, simple icon", "seed": 732, "bg": false, "view": null}

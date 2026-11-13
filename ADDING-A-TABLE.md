@@ -59,6 +59,8 @@ bottom of the table. It also has a moving target (`move` on a target) and a capt
 matrix with `status`, and two games played on the dot matrix (`game.video`) with the flipper buttons.
 `tables/starsiege/config.js` has `fields`: a vortex (the black hole) and a magnet (the tractor beam), and a
 space shooter on the dot matrix that its `script` tick moves along.
+`tables/holeinone/config.js` has `sand` and `wind` fields, a round of holes kept in the player's `counts`,
+and two more dot-matrix games.
 
 ## 4. Instructions
 
