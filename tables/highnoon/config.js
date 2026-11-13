@@ -22,6 +22,7 @@ const CRACK = ['crack1', 'crack2', 'crack3'];
 const leftSling = [[54, 448], [54, 494], [88, 520]];
 const mirror = pts => pts.map(([x, y]) => [302 - x, y]);
 const fmt = n => n.toLocaleString('en-GB');
+const multi = g => g.liveBalls() > 1 || g.launchQueue > 0;   // in multiball (or about to be)
 
 const showBonusX = g => ['x2', 'x3', 'x4', 'x5'].forEach((id, i) => (g.lamps[id] = g.player.bonusX >= i + 2 ? 1 : 0));
 const pickSkill = g => SKILL.forEach((id, i) => (g.lamps[id] = i === (g.player.ball + g.player.n) % 3 ? 2 : 0));
@@ -98,7 +99,7 @@ const duelTick = g => { const d = g.duel; if (d && !d.over && g.world.time > d.u
 
 // ---- the Saloon scoop: the first thing lit wins ----
 const saloon = g => {
-  if (g.lamps.duel && g.liveBalls() <= 1) return startDuel(g);
+  if (g.lamps.duel && !multi(g)) return startDuel(g);
   if (g.lamps.xball) { g.lamps.xball = 0; g.rules.act([['extraBall'], ['message', 'EXTRA BALL']]); return; }
   g.rules.act([['score', 5000], ['bonus', 1000], ['message', 'WHISKEY', '5,000', 'saloon']]);
 };
@@ -106,7 +107,7 @@ const saloon = g => {
 // ---- the Jail: lock two outlaws, the third shot breaks them out ----
 const jail = g => {
   if (g.lamps.superJp) { g.lamps.superJp = 0; g.rules.act([['jackpot', 250000], ['message', 'SUPER JACKPOT', '250,000', 'jail']]); return; }
-  if (!g.lamps.lock || g.liveBalls() > 1) { g.addScore(2500); return; }
+  if (!g.lamps.lock || multi(g)) { g.addScore(2500); return; }
   if (g.player.locks >= 2) {
     g.lamps.lock = 0;
     g.rules.act([['multiball', 3], ['message', 'JAILBREAK', 'MULTIBALL', 'jail']]);
@@ -120,7 +121,7 @@ const jail = g => {
 const crack = g => {
   const n = (g.player.counts.cracks = (g.player.counts.cracks ?? 0) + 1);
   CRACK.forEach((id, i) => (g.lamps[id] = i < ((n - 1) % 3) + 1 ? 1 : 0));
-  if (g.liveBalls() > 1) { if (!g.lamps.jackpot) { g.lamps.jackpot = 2; g.emit('message', { text: 'JACKPOT', sub: 'RELIT', sound: 'award' }); } return; }
+  if (multi(g)) { if (!g.lamps.jackpot) { g.lamps.jackpot = 2; g.emit('message', { text: 'JACKPOT', sub: 'RELIT', sound: 'award' }); } return; }
   if (n % 3 === 0) {
     g.rules.act([['score', 30000], ['message', 'SAFE CRACKED', 'GOLD RUSH', 'safe'], ['mode', 'goldRush']]);
     if (n === 3) { g.lamps.xball = 2; g.emit('message', { text: 'EXTRA BALL', sub: 'IS LIT AT THE SALOON' }); }
@@ -136,7 +137,7 @@ const holdUp = g => {
   if (n === 2) { g.lamps.kbL = 1; g.emit('message', { text: 'HOLD UP', sub: "SHERIFF'S BADGE LIT", scene: 'coach' }); }
   if (n === 3) {
     g.lamps.lock = g.player.locks >= 2 ? 2 : 1;
-    g.emit('message', { text: 'HOLD UP', sub: g.liveBalls() > 1 ? '25,000' : 'JAIL IS OPEN', scene: 'coach' });
+    g.emit('message', { text: 'HOLD UP', sub: multi(g) ? '25,000' : 'JAIL IS OPEN', scene: 'coach' });
     g.after(1.5, () => COACH.forEach(id => (g.lamps[id] = 0)));
   }
   g.addScore(n === 3 ? 25000 : 5000);
