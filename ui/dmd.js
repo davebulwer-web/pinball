@@ -4,6 +4,8 @@
 // A message can be an animated scene: show(lines, { scene }) where scene(api, p, lines, t) draws one frame
 // with api = { set(x, y, v), text(s, x, y, { sc, align, v, clip: [x0, x1] }), lines(lines, opts), W, H } and p running
 // 0..1 over the message. lines() writes one or two lines of a message centred, as large as they fit.
+// The state can also carry `video`, a game drawn on the display instead of everything else, and `status`, a
+// line shown with the score.
 
 import { glyph, commas } from './font.js';
 
@@ -59,6 +61,8 @@ export function createDmd({ rows = 16, on = [255, 150, 30], mid = [150, 80, 15],
   function frame(t, state) {
     now = t;
     clear();
+    const s0 = state();
+    if (s0.video) { s0.video(api); return; }   // a game played on the dot matrix
     let m = queue[0];
     if (m && m.start === null) m.start = t;
     if (m && t - m.start > m.secs) { queue.shift(); m = queue[0]; if (m) m.start = t; }
@@ -87,7 +91,15 @@ export function createDmd({ rows = 16, on = [255, 150, 30], mid = [150, 80, 15],
       return;
     }
     const low = DMD_H - 7;
+    if (s.status && tall) {   // a status line (a match score) under the score
+      text(`P${s.player} B${s.ball}`, 0, 0, { v: 1 });
+      const sc = commas(s.score);
+      text(sc, DMD_W - 1, 0, { sc: width(sc, 2) <= DMD_W - 40 ? 2 : 1, align: 'right' });
+      lines(['', s.status], { v: 2 });
+      return;
+    }
     text(`P${s.player}`, 0, 0, { v: 1 });
+    if (s.status) { text(s.status, 0, low, { v: 2 }); const sc = commas(s.score); text(sc, DMD_W - 1, 0, { align: 'right' }); return; }
     if (s.mode) text(s.mode, 0, low, { v: Math.floor(t * 4) % 2 ? 2 : 1 }); else text(`B${s.ball}`, 0, low, { v: 1 });
     const sc = commas(s.score);
     const size = [tall ? 3 : 2, 2, 1].find(k => k === 1 || width(sc, k) <= DMD_W - 16);

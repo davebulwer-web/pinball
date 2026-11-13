@@ -9,6 +9,7 @@ built into single HTML pages that work offline.
 | Fun Fair | Full layout and rules with Pixellab artwork, dot-matrix scenes and a theme tune (F-U-N lanes and skill shot, dodgems, Big Wheel ramp, Rollercoaster rail, Hook a Duck, Big Top multiball, Coconut Shy, Ghost Train) |
 | Race Day | Full layout and rules with Pixellab artwork, dot-matrix scenes and a theme tune (B-E-T lanes and skill shot, an upper flipper, the Stables scoop with a subway, pick-your-horse races on a race track toy, the Home Straight ramp, the Fences and a Jump Off hurry-up, the Bookie's Tip mystery award, the Paddock diverter and bumpers, the Lucky Horseshoe up-post, Grand National multiball with add-a-ball and a super jackpot) |
 | High Noon | Wild West table with a tall 160 x 32 dot matrix, Pixellab artwork and a cowboy theme tune. Six-shooters for flippers that really fire in the Quick Draw (outlaws pop up across the bottom of the table), a Stagecoach moving target, the Bank captive ball, the Jail scoop and Jailbreak multiball, the Railroad wire ramp, the Saloon scoop, WANTED drop targets, Gold Rush, and a kickback |
+| Cup Final | Football table with a tall dot matrix: a goalkeeper who moves across to block your shots, 60-second matches against a rival through four rounds of the cup (the match score is on the dot matrix), two games played on the dot matrix with the flipper buttons (a penalty shootout and keepy-uppy), the Cross ramp for headers, the Wall drop targets, a Golden Boot extra ball and Cup Final multiball |
 | Parts Test | Grey table using every engine part: ramp, wire rail, drop targets, saucer lock, multiball, spinner, kickback, modes |
 | Feel Test | Grey test table for tuning the ball, flippers, plunger and camera |
 
@@ -60,7 +61,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 - `tables/funfair/`: also `art.js` (images to inline), `art/` (built images, with the Pixellab sources in `art/src/`),
   `scenes.js` (dot-matrix animations) and `music.js` (the theme tune)
 - `art/gen.py`: makes an image with Pixellab (needs `PIXELLAB_API_KEY`); every prompt and seed is logged in
-  `art/prompts/log.jsonl`. `art/compose_funfair.py`, `art/compose_raceday.py` and `art/compose_highnoon.py` join each table's backdrop panels and crop the sprites.
+  `art/prompts/log.jsonl`. `art/compose_funfair.py`, `art/compose_raceday.py`, `art/compose_highnoon.py` and `art/compose_cupfinal.py` join each table's backdrop panels and crop the sprites.
 - `tables/index.js`: the list of tables, in menu order. [ADDING-A-TABLE.md](ADDING-A-TABLE.md) explains how to make a new one.
 - `previews.cjs`: takes each table's picture for the menu (`tables/<id>/preview.png`)
 - `test/`: headless physics and gameplay tests
@@ -79,7 +80,7 @@ or `?tune` for sliders that change gravity, flipper speed, bounce and kick stren
 | Plunger | `plunger` | Launches the ball; pull length sets the power |
 | Pop bumper | `bumpers` | Kicks the ball away |
 | Slingshot | `slings` | Kicks sideways on a firm hit |
-| Standup target | `targets` | Scores when hit. With `move` it slides to and fro (High Noon's Stagecoach) |
+| Standup target | `targets` | Scores when hit. With `move` it slides to and fro (High Noon's Stagecoach), or with `move: { follow }` it moves to block the ball (Cup Final's goalkeeper) |
 | Captive ball | `captives` | A ball that stays in its channel (walls with `captiveOnly`); hit it to knock it into a target |
 | Drop target bank | `dropBanks` | Targets drop when hit; `bankDown` when all are down; resets after a delay |
 | Rollover lane | `lanes` | Scores when rolled over |
@@ -109,6 +110,9 @@ picking with the flippers while a saucer holds the ball (`hold` and a rotating l
 (`post`) and add-a-ball (`addBall`).
 High Noon's Quick Draw is written as functions in its config: the `flip:left` and `flip:right` triggers fire
 the pistols, `game.lookAt` points the camera at the bottom of the table, and `releaseSaucer` lets the ball go.
+Cup Final's penalty shootout and keepy-uppy are games on the dot matrix: `game.video = { draw(api, t) }` takes
+over the display while a saucer holds the ball, and the flipper triggers play them. A table's `status(game)`
+puts a line (the match score) under the score.
 A drain pays the bonus times the multiplier; an extra ball gives a shoot again.
 
 ## Replacing sounds
@@ -134,4 +138,5 @@ A table's look is three layers, so the art always matches where the ball goes:
 4. Fun Fair art: Pixellab artwork, dot-matrix scenes, music
 5. Finish: high scores, 1 to 4 players, attract mode, table menu, link from the Fruit Machine arcade, ADDING-A-TABLE.md
 6. A second table: Race Day, with the parts and rules Fun Fair doesn't use
-7. A third table (this): High Noon, with pistol flippers, a moving target, a captive ball and a tall dot matrix
+7. A third table: High Noon, with pistol flippers, a moving target, a captive ball and a tall dot matrix
+8. A fourth table (this): Cup Final, with a goalkeeper, timed matches and games on the dot matrix
